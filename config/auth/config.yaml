@@ -1,0 +1,50 @@
+# config.yaml
+# All architecture and training hyperparameters for the Authentication Network.
+# Loaded via ModelConfig.from_yaml() in authentication_network.py.
+
+model:
+  version: "1.0.0"
+  num_features: 31          # size of the FeatureVector (~25-40 per spec)
+  attention_dim: 31         # feature-attention gate width (defaults to num_features)
+  proj_dim: 256              # projection layer / residual encoder width
+  embedding_dim: 128         # shared "Transaction Authenticity Representation" width
+  head_hidden_dim: 64        # hidden width for Trust / Risk heads
+  decision_hidden_dim: 96    # hidden width for the (deepened) Decision head
+  num_decision_classes: 4
+  dropout: 0.3
+  layer_norm_eps: 1.0e-5
+
+loss:
+  label_smoothing: 0.05
+  use_uncertainty_weighting: true   # Kendall et al. learnable task weighting
+  # fallback fixed weights, only used when use_uncertainty_weighting is false
+  trust_weight: 0.25
+  risk_weight: 0.25
+  decision_weight: 0.40
+  confidence_weight: 0.10
+
+optimizer:
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  grad_clip_norm: 1.0
+
+scheduler:
+  type: "cosine_annealing"
+  t_max: 100
+  eta_min: 0.0
+
+training:
+  epochs: 100
+  batch_size : 256
+  early_stopping_patience: 10
+  early_stopping_min_delta: 1.0e-4
+  checkpoint_dir: "./checkpoints"
+  log_dir: "./runs"
+  use_tensorboard: true
+  use_wandb: false
+  wandb_project: "auth-network"
+  mixed_precision: true
+
+inference:
+  mc_dropout_samples: 20   # number of stochastic forward passes for MC Dropout
+  deep_ensemble_size: 1    # >1 enables Deep Ensemble averaging in predict_with_uncertainty

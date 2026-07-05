@@ -1,0 +1,63 @@
+# ==========================================================
+# LLM Backend
+# ==========================================================
+
+backend: "LIGHT"        # MOCK | LIGHT | HEAVY
+
+light_model: "Qwen/Qwen2.5-0.5B-Instruct"
+
+heavy_model: "google/gemma-4-e4b-it"
+
+# ==========================================================
+# Prompt / Schema
+# ==========================================================
+
+prompt_version: "v3.0.0"
+schema_version: "1.0"
+
+# ==========================================================
+# Generation
+# ==========================================================
+
+max_retries: 1
+max_new_tokens: 128
+batch_size: 8
+
+# ==========================================================
+# Validation
+# ==========================================================
+
+max_transaction_amount: 10000000
+max_beneficiary_len: 128
+
+supported_currencies:
+  - INR
+  - USD
+  - EUR
+  - GBP
+
+valid_intents:
+  - MONEY_TRANSFER
+  - BALANCE_INQUIRY
+  - TRANSACTION_HISTORY
+  - BILL_PAYMENT
+  - UNKNOWN
+
+valid_categories:
+  - P2P_TRANSFER
+  - MERCHANT_PAYMENT
+  - BILL_PAYMENT
+  - SELF_TRANSFER
+  - UNKNOWN
+
+valid_purposes:
+  - PERSONAL_TRANSFER
+  - RENT
+  - UTILITY
+  - LOAN_REPAYMENT
+  - SHOPPING
+  - UNKNOWN
+
+intents_requiring_beneficiary:
+  - MONEY_TRANSFER
+  - BILL_PAYMENT
