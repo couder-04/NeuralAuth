@@ -9,7 +9,7 @@ that's convenient for dashboards to render directly.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from .numeric import to_python
 
@@ -76,8 +76,9 @@ class AuditBuilder:
         metadata: Dict[str, Any],
         timeline: Dict[str, float],
         top_reasons: List[str],
-        top_features: Dict[str, float],
+        top_attributions: Dict[str, float],
         decision_history: List[str],
+        feature_vector: Dict[str, Any] = None,
     ) -> Dict[str, Any]:
 
         audit: Dict[str, Any] = {
@@ -114,7 +115,15 @@ class AuditBuilder:
             },
             "decision_graph": AuditBuilder.decision_graph(fusion_result, votes),
             "top_reasons": top_reasons,
-            "top_features": top_features,
+            # Top-N model attribution/attention scores (SHAP/integrated
+            # gradients/attention weights) -- NOT the engineered feature
+            # vector. Named `top_attributions` (not `top_features`) so it
+            # can't be confused with -- or accidentally keyword-matched
+            # in place of -- the actual `feature_vector` key below (see
+            # dashboard.py::find_dict_by_keywords, which used to match
+            # this dict by mistake because its old name, `top_features`,
+            # contained the substring "features").
+            "top_attributions": top_attributions,
             "timeline_ms": timeline,
             "decision_history": decision_history,
         }
@@ -127,5 +136,14 @@ class AuditBuilder:
 
         if transaction is not None:
             audit["transaction"] = transaction
+
+        if feature_vector is not None:
+            # The full set of engineered features (see
+            # engines/feature_extractor.py / models/feature_vector.py)
+            # that fed the Authentication Network / Risk Engine / Policy
+            # Engine for this request -- included verbatim so dashboards
+            # and offline analysis can inspect every input signal, not
+            # just the top-N attribution scores above.
+            audit["feature_vector"] = {k: to_python(v) for k, v in feature_vector.items()}
 
         return audit

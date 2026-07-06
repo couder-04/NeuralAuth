@@ -247,6 +247,27 @@ def test_odd_hour():
 
 
 # ---------------------------------------------------------
+# Unfamiliar Location
+# ---------------------------------------------------------
+
+def test_unfamiliar_location():
+
+    engine = PolicyEngine()
+
+    result = engine.evaluate(
+
+        create_input(
+
+            location_familiarity="UNFAMILIAR"
+
+        )
+
+    )
+
+    assert result.required_action == PolicyAction.OTP
+
+
+# ---------------------------------------------------------
 # Rule Priority
 # ---------------------------------------------------------
 

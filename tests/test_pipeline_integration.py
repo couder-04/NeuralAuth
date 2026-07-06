@@ -64,6 +64,7 @@ def run_pipeline(auth: AuthenticationResult, features=None, **policy_overrides):
         risk=risk,
         policy=policy,
         transaction={"user_id": "test-user"},
+        features=features,
     )
     return risk, policy, decision
 
@@ -88,7 +89,10 @@ def test_risk_result_exposes_overall_risk_and_breakdown():
     assert risk.overall_risk == 0.75
     assert risk.risk_level == "HIGH"
     assert "transaction_risk" in risk.breakdown
-    assert risk.recommended_action == "VOICE_AND_OTP"
+    # Risk assesses; it doesn't decide -- RiskResult deliberately has no
+    # recommended_action. Turning risk into a discrete action is Decision
+    # Fusion's job (see engines/decision/fusion.py).
+    assert not hasattr(risk, "recommended_action")
 
 
 def test_policy_result_exposes_priority_and_rule_trace():
@@ -155,3 +159,61 @@ def test_audit_log_carries_full_decision_trace():
     assert trace["policy"]["priority"] == policy.priority
     assert trace["policy"]["matched_policy"] == policy.matched_policy
     assert trace["authentication"]["decision_probabilities"] == auth.decision_probabilities
+
+
+# ---------------------------------------------------------------------------
+# The full FeatureVector reaches audit_log["feature_vector"] (regression
+# test: it used to be extracted and used by Risk/Policy, then silently
+# discarded -- DecisionEngine.decide() was never even given a `features`
+# argument, so no dashboard/consumer could ever see all engineered
+# features, only the top-5 model attribution scores).
+# ---------------------------------------------------------------------------
+
+def test_audit_log_carries_the_full_feature_vector_when_provided():
+    from engines.feature_extractor import FeatureExtractor
+
+    auth = make_auth_result(risk_score=0.3)
+    features = FeatureExtractor.extract(
+        {
+            "identity": {"account_age_days": 400, "kyc_verified": True},
+            "vehicle": {"location_familiarity": 0.9, "time_familiarity": 0.9},
+            "history": {"failed_attempts": 0},
+            "transaction": {"amount": 5000},
+        }
+    )
+
+    _, _, decision = run_pipeline(auth, features=features)
+
+    feature_vector = decision.audit_log["feature_vector"]
+    # All 31 fields defined on FeatureVector must be present -- not a
+    # truncated top-N subset.
+    assert len(feature_vector) == 31
+    assert feature_vector == features.to_dict()
+    assert feature_vector["account_age_days"] == 400
+    assert feature_vector["failed_attempts"] == 0
+
+
+def test_audit_log_omits_feature_vector_when_not_provided():
+    auth = make_auth_result(risk_score=0.3)
+
+    _, _, decision = run_pipeline(auth, features=None)
+
+    assert "feature_vector" not in decision.audit_log
+
+
+def test_audit_log_top_attributions_is_distinct_from_feature_vector():
+    """Regression test for the naming collision that made
+    dashboard.py's keyword search accidentally display `top_features`
+    (a top-5 model-attribution dict) instead of the real feature
+    vector: the two must be separate keys with very different sizes."""
+    from engines.feature_extractor import FeatureExtractor
+
+    auth = make_auth_result(risk_score=0.3)
+    features = FeatureExtractor.extract({})
+
+    _, _, decision = run_pipeline(auth, features=features)
+
+    assert "top_attributions" in decision.audit_log
+    assert "top_features" not in decision.audit_log
+    assert len(decision.audit_log["feature_vector"]) == 31
+    assert len(decision.audit_log["top_attributions"]) <= 5

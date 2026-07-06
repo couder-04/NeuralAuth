@@ -51,7 +51,6 @@ hardcoded in the modules below.
 
 from __future__ import annotations
 
-import copy
 import dataclasses
 import json
 import logging
@@ -66,7 +65,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 logger = logging.getLogger("authentication_network")
-logging.basicConfig(level=logging.INFO)
+# NOTE: deliberately no `logging.basicConfig(...)` here. This is a
+# library module (imported by inference/predictor.py -> api/server.py,
+# and by the training scripts) -- configuring the root logger as an
+# import-time side effect would silently override whatever logging
+# setup the *application* (uvicorn, a training script's own CLI, pytest)
+# already put in place. Only application entrypoints should call
+# `logging.basicConfig`; library modules should just call
+# `getLogger(__name__)` and let the app decide how logs are handled.
 
 
 # --------------------------------------------------------------------------- #

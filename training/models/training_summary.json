@@ -1,0 +1,41 @@
+{
+    "checkpoint_version": "1.0.0",
+    "best_epoch": 4,
+    "best_macro_f1": 0.32409850592508943,
+    "total_epochs_run": 14,
+    "training_time_minutes": 2.8494941194852195,
+    "device_executed": "MPS",
+    "total_model_parameters": 418679,
+    "scaling_inference_benchmarks": {
+        "batch_size_1": {
+            "Average Latency (ms)": 1.8889949600361433,
+            "P50 Latency (ms)": 1.9682289994307212,
+            "P95 Latency (ms)": 2.2305920007056557,
+            "FPS (Throughput)": 529.3820370917593
+        },
+        "batch_size_8": {
+            "Average Latency (ms)": 1.887767304906447,
+            "P50 Latency (ms)": 1.876979000371648,
+            "P95 Latency (ms)": 2.2595292009100376,
+            "FPS (Throughput)": 4237.810443695792
+        },
+        "batch_size_16": {
+            "Average Latency (ms)": 1.9210968448987842,
+            "P50 Latency (ms)": 1.9676039992191363,
+            "P95 Latency (ms)": 2.2740419987712808,
+            "FPS (Throughput)": 8328.575439851385
+        },
+        "batch_size_32": {
+            "Average Latency (ms)": 1.9676162550240406,
+            "P50 Latency (ms)": 2.038499998889165,
+            "P95 Latency (ms)": 2.393427100741974,
+            "FPS (Throughput)": 16263.333827565386
+        },
+        "batch_size_64": {
+            "Average Latency (ms)": 1.9623183699150104,
+            "P50 Latency (ms)": 1.9495420001476305,
+            "P95 Latency (ms)": 2.0566268008224142,
+            "FPS (Throughput)": 32614.483450395408
+        }
+    }
+}

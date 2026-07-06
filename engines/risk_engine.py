@@ -216,8 +216,6 @@ class RiskEngine:
 
             breakdown=breakdown or {},
 
-            recommended_action=RiskEngine.recommended_action_for(risk_level),
-
         )
 
 

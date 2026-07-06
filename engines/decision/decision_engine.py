@@ -74,6 +74,7 @@ class DecisionEngine:
         request_id: Optional[str] = None,
         additional_recommendations: Optional[Dict[str, Any]] = None,
         additional_probabilities: Optional[Dict[str, Dict[str, float]]] = None,
+        features: Optional[Any] = None,
     ) -> DecisionResult:
         """
         Parameters
@@ -103,6 +104,13 @@ class DecisionEngine:
             distributions for the same extra sources, used by the
             probabilistic strategies (WeightedVoting / BayesianFusion).
             If omitted for a source, its vote is treated as one-hot.
+        features
+            Optional `FeatureVector` (or any object exposing `to_dict()`,
+            or a plain dict) from the Feature Extractor. Included
+            verbatim in `audit_log["feature_vector"]` purely for
+            auditability/dashboards -- the Decision Engine itself never
+            reads individual feature values; Risk/Policy already
+            consumed them upstream.
         """
 
         if isinstance(authentication, (list, tuple)):
@@ -175,7 +183,7 @@ class DecisionEngine:
 
         # ---- 3. Explainability --------------------------------------
         top_reasons = ExplanationBuilder.top_reasons(authentication, risk, policy, intent)
-        top_features = ExplanationBuilder.top_contributors(authentication)
+        top_attributions = ExplanationBuilder.top_contributors(authentication)
         summary = ExplanationBuilder.summary(final_action, top_reasons, risk, confidence, fusion_result.margin)
         message = self._message(final_action)
 
@@ -210,8 +218,9 @@ class DecisionEngine:
             metadata=metadata,
             timeline=timeline,
             top_reasons=top_reasons,
-            top_features=top_features,
+            top_attributions=top_attributions,
             decision_history=decision_history,
+            feature_vector=self._extract_feature_dict(features),
         )
 
         self.hooks.fire("after_audit", audit=audit)
@@ -333,3 +342,20 @@ class DecisionEngine:
     @staticmethod
     def _ms(start_time: float) -> float:
         return round((time.perf_counter() - start_time) * 1000, 3)
+
+    @staticmethod
+    def _extract_feature_dict(features: Optional[Any]) -> Optional[Dict[str, Any]]:
+        """Normalize the optional `features` argument into a plain dict
+        for `AuditBuilder`, without the Decision Engine taking a hard
+        dependency on `models.feature_vector.FeatureVector` (duck-typed,
+        same pattern as risk_engine.RiskEngine._extract): accepts a
+        `FeatureVector` (via `.to_dict()`), a plain dict, or `None`.
+        """
+        if features is None:
+            return None
+        to_dict = getattr(features, "to_dict", None)
+        if callable(to_dict):
+            return to_dict()
+        if isinstance(features, dict):
+            return features
+        return None

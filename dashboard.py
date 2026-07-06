@@ -1103,7 +1103,23 @@ class TopBar:
 # =============================================================================
 class InputPanel:
     """Renders the authentication request form and builds the outgoing
-    payload matching the backend's `AuthenticationRequest` schema."""
+    payload matching the backend's `AuthenticationRequest` schema.
+
+    Beyond the headline fields (transcript, user/vehicle IDs, GPS, speed,
+    engine state), this panel also exposes every field that
+    `engines.feature_extractor.FeatureExtractor.extract()` actually reads
+    off of `identity` / `biometric` / `behavior` / `vehicle` / `history` /
+    `transaction`. Those are the values that drive the Authentication
+    Network's trust/risk/confidence scores -- omitting them (as this panel
+    used to) meant every request silently fell back to the same defaults
+    and the model's output never appeared to change.
+    """
+
+    TRANSACTION_CATEGORIES: tuple[str, ...] = ("TRANSFER", "UPI", "BILL", "SHOPPING", "ATM", "OTHER")
+    BENEFICIARY_TYPES: tuple[str, ...] = ("SAVED", "NEW", "SELF", "MERCHANT", "OTHER")
+    INTENT_TYPES: tuple[str, ...] = (
+        "UNKNOWN", "BALANCE_INQUIRY", "MONEY_TRANSFER", "BILL_PAYMENT", "TRANSACTION_HISTORY",
+    )
 
     EXAMPLE_PAYLOAD: dict[str, Any] = {
         "transcript": "Hey, please send fifteen thousand rupees to my brother Raj for rent.",
@@ -1113,6 +1129,41 @@ class InputPanel:
         "gps_lon": 77.2090,
         "speed": 42.0,
         "engine_running": True,
+        # -- identity --
+        "account_age_days": 640,
+        "kyc_verified": True,
+        "phone_verified": True,
+        "email_verified": True,
+        "voice_enrolled": True,
+        # -- biometric --
+        "speaker_similarity": 0.91,
+        "liveness_score": 0.95,
+        "audio_quality": 0.88,
+        "spoof_probability": 0.03,
+        # -- behavior --
+        "speech_rate_similarity": 0.86,
+        "pronunciation_similarity": 0.9,
+        "command_familiarity": 0.8,
+        "stress_score": 0.15,
+        "hesitation_score": 0.1,
+        # -- vehicle context --
+        "location_familiarity": 0.9,
+        "time_familiarity": 0.8,
+        "driver_present": True,
+        "seatbelt_fastened": True,
+        # -- history --
+        "previous_trust_score": 0.87,
+        "failed_attempts": 0,
+        "successful_transactions": 128,
+        "fraud_history": False,
+        # -- transaction --
+        "amount": 15000.0,
+        "category": "TRANSFER",
+        "beneficiary_type": "NEW",
+        "beneficiary_frequency": 0.0,
+        "intent": "MONEY_TRANSFER",
+        "llm_confidence": 0.92,
+        "transaction_risk": 0.35,
     }
 
     def __init__(self, on_authenticate: Callable[[], None]) -> None:
@@ -1127,7 +1178,69 @@ class InputPanel:
         self.engine_toggle: Optional[ui.switch] = None
         self.timestamp_input: Optional[ui.input] = None
         self.authenticate_button: Optional[ui.button] = None
+
+        # -- identity & verification --
+        self.account_age_input: Optional[ui.number] = None
+        self.kyc_toggle: Optional[ui.switch] = None
+        self.phone_verified_toggle: Optional[ui.switch] = None
+        self.email_verified_toggle: Optional[ui.switch] = None
+        self.voice_enrolled_toggle: Optional[ui.switch] = None
+
+        # -- voice biometrics --
+        self.speaker_similarity_slider: Optional[ui.slider] = None
+        self.liveness_slider: Optional[ui.slider] = None
+        self.audio_quality_slider: Optional[ui.slider] = None
+        self.spoof_probability_slider: Optional[ui.slider] = None
+
+        # -- behavioral signals --
+        self.speech_rate_slider: Optional[ui.slider] = None
+        self.pronunciation_slider: Optional[ui.slider] = None
+        self.command_familiarity_slider: Optional[ui.slider] = None
+        self.stress_slider: Optional[ui.slider] = None
+        self.hesitation_slider: Optional[ui.slider] = None
+
+        # -- vehicle context (advanced) --
+        self.location_familiarity_slider: Optional[ui.slider] = None
+        self.time_familiarity_slider: Optional[ui.slider] = None
+        self.driver_present_toggle: Optional[ui.switch] = None
+        self.seatbelt_toggle: Optional[ui.switch] = None
+
+        # -- account history --
+        self.previous_trust_slider: Optional[ui.slider] = None
+        self.failed_attempts_input: Optional[ui.number] = None
+        self.successful_transactions_input: Optional[ui.number] = None
+        self.fraud_history_toggle: Optional[ui.switch] = None
+
+        # -- transaction details --
+        self.amount_input: Optional[ui.number] = None
+        self.category_select: Optional[ui.select] = None
+        self.beneficiary_type_select: Optional[ui.select] = None
+        self.beneficiary_frequency_input: Optional[ui.number] = None
+        self.intent_select: Optional[ui.select] = None
+        self.llm_confidence_slider: Optional[ui.slider] = None
+        self.transaction_risk_slider: Optional[ui.slider] = None
+
         self._build()
+
+    def _fraction_slider(
+        self, label: str, default: float = 0.5
+    ) -> ui.slider:
+        """A labeled 0-1 slider with a live percentage readout, matching
+        the visual pattern already used for the speed slider."""
+        with ui.column().classes("w-full gap-0"):
+            with ui.row().classes("justify-between w-full"):
+                ui.label(label).classes("text-xs").style(f"color: {Theme.TEXT_MUTED}")
+                display = ui.label(f"{default:.2f}").classes("text-xs avc-mono").style(
+                    f"color: {Theme.ACCENT_CYAN}"
+                )
+            slider = ui.slider(min=0.0, max=1.0, value=default, step=0.01)
+            slider.on("update:model-value", lambda e: display.set_text(f"{e.args:.2f}"))
+            slider._display_label = display  # noqa: SLF001 - stash for reset/example loading
+        return slider
+
+    def _set_fraction_slider(self, slider: ui.slider, value: float) -> None:
+        slider.set_value(value)
+        slider._display_label.set_text(f"{value:.2f}")  # noqa: SLF001
 
     def _build(self) -> None:
         with ui.column().classes("avc-card w-full gap-3"):
@@ -1176,6 +1289,93 @@ class InputPanel:
 
             ui.separator().classes("my-1")
 
+            # -- Identity & Verification -----------------------------------
+            with ui.expansion("Identity & Verification", icon="badge").classes("w-full"):
+                with ui.column().classes("w-full gap-2 pt-1"):
+                    self.account_age_input = ui.number(
+                        label="Account Age (days)", value=0, min=0
+                    ).classes("w-full").props("outlined dense")
+                    with ui.row().classes("w-full items-center justify-between"):
+                        ui.label("KYC Verified").classes("text-sm").style(f"color: {Theme.TEXT_SECONDARY}")
+                        self.kyc_toggle = ui.switch(value=False)
+                    with ui.row().classes("w-full items-center justify-between"):
+                        ui.label("Phone Verified").classes("text-sm").style(f"color: {Theme.TEXT_SECONDARY}")
+                        self.phone_verified_toggle = ui.switch(value=False)
+                    with ui.row().classes("w-full items-center justify-between"):
+                        ui.label("Email Verified").classes("text-sm").style(f"color: {Theme.TEXT_SECONDARY}")
+                        self.email_verified_toggle = ui.switch(value=False)
+                    with ui.row().classes("w-full items-center justify-between"):
+                        ui.label("Voice Enrolled").classes("text-sm").style(f"color: {Theme.TEXT_SECONDARY}")
+                        self.voice_enrolled_toggle = ui.switch(value=False)
+
+            # -- Voice Biometrics --------------------------------------------
+            with ui.expansion("Voice Biometrics", icon="graphic_eq").classes("w-full"):
+                with ui.column().classes("w-full gap-2 pt-1"):
+                    self.speaker_similarity_slider = self._fraction_slider("Speaker Similarity", 0.5)
+                    self.liveness_slider = self._fraction_slider("Liveness Score", 0.5)
+                    self.audio_quality_slider = self._fraction_slider("Audio Quality", 0.5)
+                    self.spoof_probability_slider = self._fraction_slider("Spoof Probability", 0.1)
+
+            # -- Behavioral Signals --------------------------------------------
+            with ui.expansion("Behavioral Signals", icon="psychology").classes("w-full"):
+                with ui.column().classes("w-full gap-2 pt-1"):
+                    self.speech_rate_slider = self._fraction_slider("Speech Rate Similarity", 0.5)
+                    self.pronunciation_slider = self._fraction_slider("Pronunciation Similarity", 0.5)
+                    self.command_familiarity_slider = self._fraction_slider("Command Familiarity", 0.5)
+                    self.stress_slider = self._fraction_slider("Stress Score", 0.2)
+                    self.hesitation_slider = self._fraction_slider("Hesitation Score", 0.2)
+
+            # -- Vehicle Context (advanced) -----------------------------------
+            with ui.expansion("Vehicle Context (Advanced)", icon="directions_car").classes("w-full"):
+                with ui.column().classes("w-full gap-2 pt-1"):
+                    self.location_familiarity_slider = self._fraction_slider("Location Familiarity", 0.5)
+                    self.time_familiarity_slider = self._fraction_slider("Time Familiarity", 0.5)
+                    with ui.row().classes("w-full items-center justify-between"):
+                        ui.label("Driver Present").classes("text-sm").style(f"color: {Theme.TEXT_SECONDARY}")
+                        self.driver_present_toggle = ui.switch(value=True)
+                    with ui.row().classes("w-full items-center justify-between"):
+                        ui.label("Seatbelt Fastened").classes("text-sm").style(
+                            f"color: {Theme.TEXT_SECONDARY}"
+                        )
+                        self.seatbelt_toggle = ui.switch(value=True)
+
+            # -- Account History -----------------------------------------------
+            with ui.expansion("Account History", icon="history").classes("w-full"):
+                with ui.column().classes("w-full gap-2 pt-1"):
+                    self.previous_trust_slider = self._fraction_slider("Previous Trust Score", 1.0)
+                    self.failed_attempts_input = ui.number(
+                        label="Failed Attempts", value=0, min=0
+                    ).classes("w-full").props("outlined dense")
+                    self.successful_transactions_input = ui.number(
+                        label="Successful Transactions", value=0, min=0
+                    ).classes("w-full").props("outlined dense")
+                    with ui.row().classes("w-full items-center justify-between"):
+                        ui.label("Fraud History").classes("text-sm").style(f"color: {Theme.TEXT_SECONDARY}")
+                        self.fraud_history_toggle = ui.switch(value=False)
+
+            # -- Transaction Details ---------------------------------------------
+            with ui.expansion("Transaction Details", icon="payments", value=True).classes("w-full"):
+                with ui.column().classes("w-full gap-2 pt-1"):
+                    self.amount_input = ui.number(
+                        label="Amount", value=0, min=0
+                    ).classes("w-full").props("outlined dense")
+                    self.category_select = ui.select(
+                        list(self.TRANSACTION_CATEGORIES), label="Category", value="OTHER"
+                    ).classes("w-full").props("outlined dense")
+                    self.beneficiary_type_select = ui.select(
+                        list(self.BENEFICIARY_TYPES), label="Beneficiary Type", value="OTHER"
+                    ).classes("w-full").props("outlined dense")
+                    self.beneficiary_frequency_input = ui.number(
+                        label="Beneficiary Frequency (past transfers)", value=0, min=0
+                    ).classes("w-full").props("outlined dense")
+                    self.intent_select = ui.select(
+                        list(self.INTENT_TYPES), label="Intent", value="UNKNOWN"
+                    ).classes("w-full").props("outlined dense")
+                    self.llm_confidence_slider = self._fraction_slider("LLM Confidence", 0.5)
+                    self.transaction_risk_slider = self._fraction_slider("Transaction Risk", 0.1)
+
+            ui.separator().classes("my-1")
+
             with ui.row().classes("w-full gap-2"):
                 self.authenticate_button = ui.button(
                     "AUTHENTICATE", icon="bolt", on_click=self._on_authenticate
@@ -1200,6 +1400,42 @@ class InputPanel:
         self.speed_display.set_text(f"{example['speed']:.0f} km/h")
         self.engine_toggle.set_value(example["engine_running"])
         self.timestamp_input.set_value(datetime.now().isoformat(timespec="seconds"))
+
+        self.account_age_input.set_value(example["account_age_days"])
+        self.kyc_toggle.set_value(example["kyc_verified"])
+        self.phone_verified_toggle.set_value(example["phone_verified"])
+        self.email_verified_toggle.set_value(example["email_verified"])
+        self.voice_enrolled_toggle.set_value(example["voice_enrolled"])
+
+        self._set_fraction_slider(self.speaker_similarity_slider, example["speaker_similarity"])
+        self._set_fraction_slider(self.liveness_slider, example["liveness_score"])
+        self._set_fraction_slider(self.audio_quality_slider, example["audio_quality"])
+        self._set_fraction_slider(self.spoof_probability_slider, example["spoof_probability"])
+
+        self._set_fraction_slider(self.speech_rate_slider, example["speech_rate_similarity"])
+        self._set_fraction_slider(self.pronunciation_slider, example["pronunciation_similarity"])
+        self._set_fraction_slider(self.command_familiarity_slider, example["command_familiarity"])
+        self._set_fraction_slider(self.stress_slider, example["stress_score"])
+        self._set_fraction_slider(self.hesitation_slider, example["hesitation_score"])
+
+        self._set_fraction_slider(self.location_familiarity_slider, example["location_familiarity"])
+        self._set_fraction_slider(self.time_familiarity_slider, example["time_familiarity"])
+        self.driver_present_toggle.set_value(example["driver_present"])
+        self.seatbelt_toggle.set_value(example["seatbelt_fastened"])
+
+        self._set_fraction_slider(self.previous_trust_slider, example["previous_trust_score"])
+        self.failed_attempts_input.set_value(example["failed_attempts"])
+        self.successful_transactions_input.set_value(example["successful_transactions"])
+        self.fraud_history_toggle.set_value(example["fraud_history"])
+
+        self.amount_input.set_value(example["amount"])
+        self.category_select.set_value(example["category"])
+        self.beneficiary_type_select.set_value(example["beneficiary_type"])
+        self.beneficiary_frequency_input.set_value(example["beneficiary_frequency"])
+        self.intent_select.set_value(example["intent"])
+        self._set_fraction_slider(self.llm_confidence_slider, example["llm_confidence"])
+        self._set_fraction_slider(self.transaction_risk_slider, example["transaction_risk"])
+
         ui.notify("Example request loaded", type="info", position="top")
 
     def clear(self) -> None:
@@ -1213,6 +1449,43 @@ class InputPanel:
         self.speed_display.set_text("0 km/h")
         self.engine_toggle.set_value(False)
         self.timestamp_input.set_value(datetime.now().isoformat(timespec="seconds"))
+
+        self.account_age_input.set_value(0)
+        self.kyc_toggle.set_value(False)
+        self.phone_verified_toggle.set_value(False)
+        self.email_verified_toggle.set_value(False)
+        self.voice_enrolled_toggle.set_value(False)
+
+        for slider, default in (
+            (self.speaker_similarity_slider, 0.5),
+            (self.liveness_slider, 0.5),
+            (self.audio_quality_slider, 0.5),
+            (self.spoof_probability_slider, 0.1),
+            (self.speech_rate_slider, 0.5),
+            (self.pronunciation_slider, 0.5),
+            (self.command_familiarity_slider, 0.5),
+            (self.stress_slider, 0.2),
+            (self.hesitation_slider, 0.2),
+            (self.location_familiarity_slider, 0.5),
+            (self.time_familiarity_slider, 0.5),
+            (self.previous_trust_slider, 1.0),
+            (self.llm_confidence_slider, 0.5),
+            (self.transaction_risk_slider, 0.1),
+        ):
+            self._set_fraction_slider(slider, default)
+
+        self.driver_present_toggle.set_value(True)
+        self.seatbelt_toggle.set_value(True)
+
+        self.failed_attempts_input.set_value(0)
+        self.successful_transactions_input.set_value(0)
+        self.fraud_history_toggle.set_value(False)
+
+        self.amount_input.set_value(0)
+        self.category_select.set_value("OTHER")
+        self.beneficiary_type_select.set_value("OTHER")
+        self.beneficiary_frequency_input.set_value(0)
+        self.intent_select.set_value("UNKNOWN")
 
     def build_payload(self) -> dict[str, Any]:
         return {
@@ -1238,29 +1511,67 @@ class InputPanel:
 
             # ===========================
             # FeatureExtractor input
+            #
+            # These keys are read verbatim by
+            # `engines.feature_extractor.FeatureExtractor.extract()` --
+            # they must match its lookups exactly or the corresponding
+            # feature silently falls back to a constant default and the
+            # Authentication Network's score stops responding to it.
             # ===========================
             "identity": {
                 "user_id": self.user_id_input.value or "",
+                "account_age_days": self.account_age_input.value or 0,
+                "kyc_verified": self.kyc_toggle.value,
+                "phone_verified": self.phone_verified_toggle.value,
+                "email_verified": self.email_verified_toggle.value,
+                "voice_enrolled": self.voice_enrolled_toggle.value,
             },
 
-            "biometric": {},
+            "biometric": {
+                "speaker_similarity": self.speaker_similarity_slider.value,
+                "liveness_score": self.liveness_slider.value,
+                "audio_quality": self.audio_quality_slider.value,
+                "spoof_probability": self.spoof_probability_slider.value,
+            },
 
             "behavior": {
-                "speed": self.speed_slider.value,
-                "engine_running": self.engine_toggle.value,
+                "speech_rate_similarity": self.speech_rate_slider.value,
+                "pronunciation_similarity": self.pronunciation_slider.value,
+                "command_familiarity": self.command_familiarity_slider.value,
+                "stress_score": self.stress_slider.value,
+                "hesitation_score": self.hesitation_slider.value,
             },
 
             "vehicle": {
                 "vehicle_id": self.vehicle_id_input.value or "",
+                "vehicle_speed": self.speed_slider.value,
+                "engine_running": self.engine_toggle.value,
+                "location_familiarity": self.location_familiarity_slider.value,
+                "time_familiarity": self.time_familiarity_slider.value,
+                "driver_present": self.driver_present_toggle.value,
+                "seatbelt_fastened": self.seatbelt_toggle.value,
                 "gps": {
                     "lat": self.gps_lat_input.value,
                     "lon": self.gps_lon_input.value,
                 },
             },
 
-            "history": {},
+            "history": {
+                "previous_trust_score": self.previous_trust_slider.value,
+                "failed_attempts": self.failed_attempts_input.value or 0,
+                "successful_transactions": self.successful_transactions_input.value or 0,
+                "fraud_history": self.fraud_history_toggle.value,
+            },
 
-            "transaction": {},
+            "transaction": {
+                "amount": self.amount_input.value or 0.0,
+                "category": self.category_select.value,
+                "beneficiary_type": self.beneficiary_type_select.value,
+                "beneficiary_frequency": self.beneficiary_frequency_input.value or 0.0,
+                "intent": self.intent_select.value,
+                "llm_confidence": self.llm_confidence_slider.value,
+                "transaction_risk": self.transaction_risk_slider.value,
+            },
         }
 
 

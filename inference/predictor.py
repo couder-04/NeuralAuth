@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
 import time
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -327,16 +328,27 @@ class AuthenticationPredictor:
 # ------------------------------------------------------------
 
 _predictor: Optional[AuthenticationPredictor] = None
+_predictor_lock = threading.Lock()
 
 
 def get_predictor() -> AuthenticationPredictor:
     """
     Lazily create the predictor on first use.
+
+    Thread-safe via double-checked locking: the fast path (predictor
+    already loaded) never touches the lock, and concurrent callers that
+    race on an unloaded predictor block on `_predictor_lock` so only
+    one of them ever constructs (and pays the cost of loading) the
+    model -- the rest simply observe the already-built singleton once
+    they acquire the lock. The lock guards nothing except this single
+    assignment, so there's no risk of deadlock.
     """
     global _predictor
 
     if _predictor is None:
-        _predictor = AuthenticationPredictor()
+        with _predictor_lock:
+            if _predictor is None:
+                _predictor = AuthenticationPredictor()
 
     return _predictor
 
