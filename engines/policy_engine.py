@@ -49,7 +49,7 @@ if not logger.handlers:
     logger.setLevel(logging.INFO)
 
 
-DEFAULT_RULES_PATH = Path(__file__).parent / "rules" / "policy_rules.yaml"
+DEFAULT_RULES_PATH = Path(__file__).resolve().parent.parent / "rules" / "policy_rules.yaml"
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +78,22 @@ class PolicyAction(Enum):
             PolicyAction.REJECT: 5,
         }
         return order[self]
+
+    @property
+    def priority_tier(self) -> str:
+        """Maps this action to the coarse CRITICAL/HIGH/MEDIUM/LOW tier
+        expected by the Decision Engine (engines/decision/types.py ->
+        PolicyPriority). Only CRITICAL unconditionally overrides fusion,
+        so REJECT is the only action mapped there."""
+        tiers = {
+            PolicyAction.ALLOW: "LOW",
+            PolicyAction.VOICE_CHALLENGE: "MEDIUM",
+            PolicyAction.OTP: "MEDIUM",
+            PolicyAction.VOICE_AND_OTP: "HIGH",
+            PolicyAction.MANUAL_REVIEW: "HIGH",
+            PolicyAction.REJECT: "CRITICAL",
+        }
+        return tiers[self]
 
 
 # Evaluation order used to group rules (independent of severity, used for
@@ -215,7 +231,21 @@ def _resolve_condition_key(key: str) -> tuple[str, Callable[[Any, Any], bool]]:
 
 @dataclass
 class PolicyResult:
-    """The final decision returned by the Policy Engine."""
+    """The final decision returned by the Policy Engine.
+
+    Field naming intentionally matches what downstream consumers read via
+    `getattr` (see engines/decision/decision_engine.py and
+    engines/decision/audit.py):
+
+        required_action    the winning PolicyAction
+        priority            CRITICAL/HIGH/MEDIUM/LOW tier (str) -- only
+                            CRITICAL unconditionally overrides fusion
+        matched_policy      name of the winning rule
+        matched_rules       every rule name that matched, in priority order
+        rule_trace          structured trace of every matched rule
+        policy_score        the winning rule's raw priority, normalized to
+                            0..1 for cross-engine comparability
+    """
 
     required_action: PolicyAction
     policy_name: str
@@ -226,6 +256,11 @@ class PolicyResult:
     requires_manual_review: bool
     override_network_decision: bool
     audit_message: dict
+    priority: str = "LOW"
+    matched_policy: str = ""
+    matched_rules: list = field(default_factory=list)
+    rule_trace: list = field(default_factory=list)
+    policy_score: float = 0.0
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -301,6 +336,7 @@ class PolicyEngine:
 
         winner = self.resolve_conflicts(matched)
         audit = self.generate_audit(policy_input, winner, matched)
+        trace = self.build_rule_trace(winner, matched)
 
         result = PolicyResult(
             required_action=winner.action,
@@ -315,6 +351,11 @@ class PolicyEngine:
                 and winner.action.value != policy_input.network_decision
             ),
             audit_message=audit,
+            priority=winner.action.priority_tier,
+            matched_policy=winner.name,
+            matched_rules=[rule.name for rule in matched],
+            rule_trace=trace,
+            policy_score=round(min(winner.priority, 100) / 100, 4),
         )
         logger.info(
             "Decision=%s policy=%s priority=%d network_decision=%s override=%s",
@@ -371,6 +412,24 @@ class PolicyEngine:
             ],
         }
 
+    def build_rule_trace(
+        self,
+        winner: PolicyRule,
+        matched: list[PolicyRule],
+    ) -> list[dict]:
+        """Structured, per-rule trace for downstream auditing (consumed by
+        engines/decision/audit.py::AuditBuilder.rule_trace)."""
+        return [
+            {
+                "rule": rule.name,
+                "priority": rule.priority,
+                "action": rule.action.value,
+                "passed": True,
+                "winner": rule.name == winner.name,
+            }
+            for rule in matched
+        ]
+
     def export_policy(self, result: PolicyResult) -> dict:
         """Serialize a PolicyResult for downstream consumers (e.g. the
         Decision Engine) or for logging/telemetry pipelines.
@@ -404,6 +463,11 @@ class PolicyEngine:
             requires_manual_review=False,
             override_network_decision=False,
             audit_message=audit,
+            priority=PolicyAction.ALLOW.priority_tier,
+            matched_policy="DefaultAllow",
+            matched_rules=[],
+            rule_trace=[],
+            policy_score=0.0,
         )
 
 

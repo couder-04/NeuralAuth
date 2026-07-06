@@ -1,12 +1,19 @@
 """
 tests/test_api.py
 
-Integration tests for FastAPI server.
+Integration tests for the FastAPI server.
+
+These monkeypatch each engine at the seam the (fixed) pipeline actually
+uses: predictor.predict_result() -> AuthenticationResult, Intent Engine
+-> Transaction, Risk Engine -> RiskResult, Policy Engine -> PolicyResult,
+Decision Engine -> DecisionResult (see api/server.py and the architecture
+review's End-to-End Pipeline section).
 """
 
 from fastapi.testclient import TestClient
 
 from api.server import app
+from engines.decision.types import DecisionAction, Severity
 
 
 client = TestClient(app)
@@ -61,41 +68,35 @@ def test_authenticate(monkeypatch):
         lambda data: DummyFeatureVector(),
     )
 
-    monkeypatch.setattr(
-        server.FeatureExtractor,
-        "to_dict",
-        lambda fv: {
-            "x1": 0.1,
-            "x2": 0.2,
-            "x3": 0.3,
-        },
-    )
-
     # --------------------------------------------------
-    # Fake Authentication Model
+    # Fake Predictor -- predict_result() is the seam api/server.py
+    # actually calls.
     # --------------------------------------------------
 
-    monkeypatch.setattr(
-        server,
-        "get_auth_model",
-        lambda: object(),
-    )
-
-    # --------------------------------------------------
-    # Fake Authentication Prediction
-    # --------------------------------------------------
-
-    class DummyPrediction:
+    class DummyAuthResult:
 
         trust_score = 0.95
         risk_score = 0.10
         confidence = 0.98
-        decision = "ALLOW"
+        confidence_std = None
+        recommended_action = "ALLOW"
+        decision_probabilities = {
+            "ALLOW": 0.95,
+            "VOICE_CHALLENGE": 0.03,
+            "VOICE_AND_OTP": 0.01,
+            "REJECT": 0.01,
+        }
+        attributions = {}
+
+    class DummyPredictor:
+
+        def predict_result(self, request):
+            return DummyAuthResult()
 
     monkeypatch.setattr(
         server,
-        "predict",
-        lambda *args, **kwargs: DummyPrediction(),
+        "get_predictor",
+        lambda: DummyPredictor(),
     )
 
     # --------------------------------------------------
@@ -134,8 +135,12 @@ def test_authenticate(monkeypatch):
 
     class DummyRisk:
 
-        level = "LOW"
-        score = 0.10
+        overall_risk = 0.10
+        risk_score = 0.10
+        risk_level = "LOW"
+        confidence = 0.98
+        breakdown = {}
+        recommended_action = "ALLOW"
 
     class DummyRiskEngine:
 
@@ -155,10 +160,16 @@ def test_authenticate(monkeypatch):
     class DummyPolicy:
 
         required_action = "ALLOW"
+        priority = "LOW"
+        matched_policy = "DefaultAllow"
+        matched_rules = []
+        rule_trace = []
+        policy_score = 0.0
+        reason = "No policy rule matched."
 
     class DummyPolicyEngine:
 
-        def evaluate(self, **kwargs):
+        def evaluate(self, policy_input):
             return DummyPolicy()
 
     monkeypatch.setattr(
@@ -174,7 +185,8 @@ def test_authenticate(monkeypatch):
     class DummyDecision:
 
         status = "SUCCESS"
-        action = "ALLOW"
+        action = DecisionAction.ALLOW
+        severity = Severity.INFO
         transaction_allowed = True
         authentication_required = False
         voice_required = False

@@ -1,6 +1,0 @@
-{
-    "0": "ALLOW",
-    "1": "VOICE_CHALLENGE",
-    "2": "VOICE_AND_OTP",
-    "3": "REJECT"
-}

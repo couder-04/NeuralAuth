@@ -228,6 +228,183 @@ class Prediction:
             ),
         )
 
+    def to_result(self, index: int = 0, model_version: str = "unknown") -> "AuthenticationResult":
+        """
+        Collapse one sample out of this (possibly batched) tensor-based
+        Prediction into a plain-Python `AuthenticationResult` -- the
+        contract object the Risk / Policy / Decision engines are designed
+        against, instead of forcing every caller to pull tensors apart and
+        reconstruct a heuristic (see the architecture review: this is the
+        fix for "the network never exposes its own recommendation object").
+        """
+        probs_tensor = self.decision_probability[index].detach().cpu()
+        probs = probs_tensor.tolist()
+        labels = [DECISION_LABELS[Decision(i)] for i in range(len(probs))]
+        prob_dict = {label: float(p) for label, p in zip(labels, probs)}
+
+        ranked = sorted(prob_dict.values(), reverse=True)
+        margin = (ranked[0] - ranked[1]) if len(ranked) > 1 else 1.0
+
+        decision_label = labels[int(torch.argmax(self.decision_logits[index]).item())]
+
+        attention: Dict[str, float] = {}
+        if self.feature_attention is not None:
+            names = _feature_names(self.feature_attention.shape[-1])
+            values = self.feature_attention[index].detach().cpu().tolist()
+            attention = {name: float(v) for name, v in zip(names, values)}
+
+        return AuthenticationResult(
+            trust_score=float(self.trust_score[index].item()),
+            risk_score=float(self.risk_score[index].item()),
+            confidence=float(self.confidence[index].item()),
+            recommended_action=decision_label,
+            decision_probabilities=prob_dict,
+            # No dedicated SHAP / Integrated-Gradients module exists yet
+            # (flagged in the review as future explainability work) -- the
+            # attention gate is the best attribution signal currently
+            # available, so it is reused here rather than left empty.
+            attributions=attention,
+            embedding=self.embedding[index].detach().cpu().tolist(),
+            model_version=model_version,
+        )
+
+
+def _feature_names(num_features: int) -> List[str]:
+    """Best-effort human-readable feature names for explainability output.
+    Falls back to generic names if `FeatureVector`'s field count doesn't
+    match (e.g. a differently-configured network)."""
+    try:
+        from models.feature_vector import FeatureVector
+
+        names = [f.name for f in dataclasses.fields(FeatureVector)]
+        if len(names) == num_features:
+            return names
+    except Exception:  # pragma: no cover - defensive fallback only
+        pass
+    return [f"feature_{i}" for i in range(num_features)]
+
+
+@dataclass
+class AuthenticationResult:
+    """
+    Single-sample, plain-Python contract produced for downstream consumers
+    (Risk Engine, Policy Engine, Decision Engine, API). `Prediction` above
+    stays tensor-based and batched because the training loop and loss
+    functions need it that way; `AuthenticationResult` is the serving-time
+    adapter that turns one row of a `Prediction` into the shape the rest of
+    the pipeline actually depends on (see `engines/decision/`, which reads
+    `decision_probabilities`, `attributions`, and `confidence_std` via
+    `getattr` -- those names are intentionally matched here).
+
+    Built by `from_prediction()`, normally called from
+    `inference/predictor.py` after a forward pass.
+    """
+
+    trust_score: float
+    risk_score: float
+    confidence: float
+    recommended_action: str
+
+    # Full predicted distribution over discrete actions, keyed by label
+    # (e.g. {"ALLOW": 0.82, "VOICE_CHALLENGE": 0.11, ...}). This is what
+    # engines/decision/decision_engine.py's `_authentication_recommendation`
+    # takes the argmax of -- the network's own belief, not a re-derived
+    # heuristic.
+    decision_probabilities: Dict[str, float]
+
+    # Ranked per-feature attention weights, keyed by feature name. Consumed
+    # by engines/decision/explanation.py::ExplanationBuilder as the
+    # preferred (model-native) source of "top reasons" -- falls back to
+    # hardcoded reason strings only when this is empty.
+    attributions: Dict[str, float]
+
+    # Only populated when produced from an UncertainPrediction (MC-Dropout /
+    # deep ensemble); None for a single deterministic forward pass. Used by
+    # the Decision Engine's uncertainty gate.
+    confidence_std: Optional[float] = None
+
+    embedding: Optional[List[float]] = None
+    model_version: str = ""
+    latency_ms: float = 0.0
+
+    def to_dict(self) -> Dict:
+        return dataclasses.asdict(self)
+
+    @classmethod
+    def from_prediction(
+        cls,
+        prediction: "Prediction",
+        feature_names: Sequence[str],
+        class_mapping: Optional[Dict[int, str]] = None,
+        confidence_std: Optional[float] = None,
+        model_version: str = "",
+        latency_ms: float = 0.0,
+        sample_index: int = 0,
+    ) -> "AuthenticationResult":
+        """
+        Convert row `sample_index` of a batched `Prediction` into a plain,
+        single-sample `AuthenticationResult`.
+
+        `class_mapping` should map decision-class index -> label string. If
+        omitted, falls back to this module's own `DECISION_LABELS` (i.e.
+        ALLOW/VOICE_CHALLENGE/VOICE_AND_OTP/REJECT in that class order) --
+        pass the trained checkpoint's own `class_mapping.json` when
+        available, since that's the source of truth for what a specific
+        checkpoint's class indices actually mean.
+        """
+        mapping = class_mapping or {int(k): v for k, v in DECISION_LABELS.items()}
+
+        probs = prediction.decision_probability[sample_index].detach().cpu().tolist()
+        decision_probabilities = {
+            mapping.get(i, f"CLASS_{i}"): float(p) for i, p in enumerate(probs)
+        }
+        recommended_action = max(decision_probabilities.items(), key=lambda kv: kv[1])[0]
+
+        attributions: Dict[str, float] = {}
+        if prediction.feature_attention is not None:
+            weights = prediction.feature_attention[sample_index].detach().cpu().tolist()
+            attributions = {
+                name: float(w) for name, w in zip(feature_names, weights)
+            }
+
+        embedding = prediction.embedding[sample_index].detach().cpu().tolist()
+
+        return cls(
+            trust_score=float(prediction.trust_score[sample_index].item()),
+            risk_score=float(prediction.risk_score[sample_index].item()),
+            confidence=float(prediction.confidence[sample_index].item()),
+            recommended_action=recommended_action,
+            decision_probabilities=decision_probabilities,
+            attributions=attributions,
+            confidence_std=confidence_std,
+            embedding=embedding,
+            model_version=model_version,
+            latency_ms=latency_ms,
+        )
+
+    @classmethod
+    def from_uncertain_prediction(
+        cls,
+        uncertain: "UncertainPrediction",
+        feature_names: Sequence[str],
+        class_mapping: Optional[Dict[int, str]] = None,
+        model_version: str = "",
+        latency_ms: float = 0.0,
+        sample_index: int = 0,
+    ) -> "AuthenticationResult":
+        """Same as `from_prediction`, but also folds in the per-sample
+        confidence_std computed across MC-Dropout / ensemble members."""
+        confidence_std = float(uncertain.confidence_std[sample_index].item())
+        return cls.from_prediction(
+            uncertain.mean,
+            feature_names=feature_names,
+            class_mapping=class_mapping,
+            confidence_std=confidence_std,
+            model_version=model_version,
+            latency_ms=latency_ms,
+            sample_index=sample_index,
+        )
+
 
 @dataclass
 class UncertainPrediction:
@@ -243,6 +420,14 @@ class UncertainPrediction:
     decision_probability_std: torch.Tensor
     confidence_std: torch.Tensor
     num_samples: int
+
+    def to_result(self, index: int = 0, model_version: str = "unknown") -> "AuthenticationResult":
+        """Like `Prediction.to_result`, but also carries the epistemic
+        `confidence_std` from MC-Dropout / Deep Ensemble sampling -- this is
+        what lets the Decision Engine's uncertainty gate actually fire."""
+        result = self.mean.to_result(index=index, model_version=model_version)
+        result.confidence_std = float(self.confidence_std[index].item())
+        return result
 
 
 @dataclass

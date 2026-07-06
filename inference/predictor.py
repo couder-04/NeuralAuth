@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -32,6 +33,7 @@ from sklearn.preprocessing import StandardScaler, OrdinalEncoder
 
 from engines.authentication_network import (
     AuthenticationNetwork,
+    AuthenticationResult,
     ModelConfig,
     Prediction,
 )
@@ -257,7 +259,10 @@ class AuthenticationPredictor:
     @torch.no_grad()
     def predict(self, request: Dict) -> Prediction:
         """
-        Runs deterministic inference.
+        Runs deterministic inference. Returns the raw, batched, tensor-based
+        `Prediction` -- useful for training/analysis code, but NOT the
+        contract downstream engines (Risk/Policy/Decision) should depend
+        on. Use `predict_result()` for that.
         """
         features = self.preprocess(request)
         return self.model(features)
@@ -265,9 +270,38 @@ class AuthenticationPredictor:
     # --------------------------------------------------------
 
     @torch.no_grad()
+    def predict_result(self, request: Dict) -> AuthenticationResult:
+        """
+        Runs inference and converts the output into the single,
+        plain-Python `AuthenticationResult` contract that the Risk Engine,
+        Policy Engine, and Decision Engine are designed against (see
+        architecture review, Problem 3 -- "Predictor currently combines
+        preprocessing, model inference, and result conversion"). Those
+        responsibilities are kept as three separate steps here:
+
+            1. preprocess()               raw JSON -> feature tensor
+            2. self.model(...)            feature tensor -> Prediction
+            3. Prediction.to_result(...)  Prediction -> AuthenticationResult
+        """
+        start = time.perf_counter()
+        features = self.preprocess(request)
+        prediction = self.model(features)
+        latency_ms = (time.perf_counter() - start) * 1000
+
+        result = prediction.to_result(
+            index=0,
+            model_version=self.model_info.get("model_version", "unknown"),
+        )
+        result.latency_ms = round(latency_ms, 3)
+        return result
+
+    # --------------------------------------------------------
+
+    @torch.no_grad()
     def predict_dict(self, request: Dict) -> Dict[str, Any]:
         """
-        Returns prediction as a Python dictionary.
+        Returns prediction as a Python dictionary. Kept for
+        debugging/inspection; API code should use `predict_result()`.
         """
         pred = self.predict(request)
         decision = int(pred.decision.item())
@@ -323,3 +357,11 @@ def predict(request: Dict) -> Dict[str, Any]:
     Run inference and return prediction as a dictionary.
     """
     return get_predictor().predict_dict(request)
+
+
+def predict_result(request: Dict):
+    """
+    Run inference and return the unified `AuthenticationResult` contract
+    consumed by the Risk / Policy / Decision engines.
+    """
+    return get_predictor().predict_result(request)
