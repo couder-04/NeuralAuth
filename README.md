@@ -11,6 +11,8 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-API-green.svg)
 ![Tests](https://img.shields.io/badge/Tests-158%20passing-brightgreen.svg)
 ![License](https://img.shields.io/badge/License-MIT-orange.svg)
+![Coverage](https://img.shields.io/badge/Coverage-Core%20Paths-9cf.svg)
+![Status](https://img.shields.io/badge/Status-Production--Hardened-success.svg)
 
 </div>
 
@@ -18,24 +20,42 @@
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Key Features](#key-features)
-3. [Complete Architecture Graph](#complete-architecture-graph)
-4. [Request Lifecycle, Step by Step](#request-lifecycle-step-by-step)
-5. [Startup & Shutdown Lifecycle](#startup--shutdown-lifecycle)
-6. [Core Components](#core-components)
-7. [Decision Engine Internals](#decision-engine-internals)
-8. [Repository Structure](#repository-structure)
-9. [Module Dependency Graph](#module-dependency-graph)
-10. [Getting Started](#getting-started)
-11. [Configuration](#configuration)
-12. [Security](#security)
-13. [Testing](#testing)
-14. [Milestones](#milestones)
-15. [Tech Stack](#tech-stack)
-16. [Known Limitations & Roadmap](#known-limitations--roadmap)
-17. [Contributing](#contributing)
-18. [License](#license)
+- [🧠 NeuralAuth](#-neuralauth)
+    - [AI-Powered Multi-Modal Transaction Authentication Engine](#ai-powered-multi-modal-transaction-authentication-engine)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Key Features](#key-features)
+  - [Complete Architecture Graph](#complete-architecture-graph)
+    - [High-level system view](#high-level-system-view)
+  - [Request Lifecycle, Step by Step](#request-lifecycle-step-by-step)
+  - [Startup \& Shutdown Lifecycle](#startup--shutdown-lifecycle)
+  - [Core Components](#core-components)
+    - [Authentication Network (`engines/authentication_network.py`)](#authentication-network-enginesauthentication_networkpy)
+    - [Feature Extraction (`engines/feature_extractor.py`, `models/feature_vector.py`)](#feature-extraction-enginesfeature_extractorpy-modelsfeature_vectorpy)
+    - [Inference (`inference/predictor.py`)](#inference-inferencepredictorpy)
+    - [Intent Engine (`engines/intent_engine.py`)](#intent-engine-enginesintent_enginepy)
+    - [Risk Engine (`engines/risk_engine.py`)](#risk-engine-enginesrisk_enginepy)
+    - [Policy Context (`engines/policy_context.py`)](#policy-context-enginespolicy_contextpy)
+    - [Policy Engine (`engines/policy_engine.py`, `rules/policy_rules.yaml`)](#policy-engine-enginespolicy_enginepy-rulespolicy_rulesyaml)
+    - [Decision Engine (`engines/decision/`)](#decision-engine-enginesdecision)
+    - [Dashboard (`dashboard.py`, launched by `app.py`)](#dashboard-dashboardpy-launched-by-apppy)
+  - [Decision Engine Internals](#decision-engine-internals)
+    - [Fusion Strategy Comparison](#fusion-strategy-comparison)
+  - [Repository Structure](#repository-structure)
+  - [Module Dependency Graph](#module-dependency-graph)
+  - [Testing Pyramid](#testing-pyramid)
+  - [Security Layers](#security-layers)
+  - [Getting Started](#getting-started)
+  - [Configuration](#configuration)
+  - [Security](#security)
+  - [Testing](#testing)
+  - [Milestones](#milestones)
+  - [Tech Stack](#tech-stack)
+  - [Known Limitations \& Roadmap](#known-limitations--roadmap)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [NeuralAuth](#neuralauth)
+    - [Intelligent Authentication Through Deep Learning](#intelligent-authentication-through-deep-learning)
 
 ---
 
@@ -44,6 +64,26 @@
 **NeuralAuth** authenticates financial transactions in real time by combining a multi-task deep neural network, an LLM-backed intent parser, a deterministic risk engine, a YAML-driven policy engine, and a pluggable decision-fusion layer — all behind a single FastAPI endpoint.
 
 Every stage produces a typed, explainable output that is threaded through to a full audit trail: the exact feature values that fed the model, the model's own attribution scores, which policy rules matched, and which fusion strategy produced the final action. Nothing is a black box.
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#6C5CE7','primaryTextColor':'#fff','primaryBorderColor':'#4834d4','lineColor':'#a29bfe','secondaryColor':'#00b894','tertiaryColor':'#fdcb6e'}}}%%
+flowchart LR
+    A(["🎙 Voice + Context"]) --> B["🧠 Neural Network"]
+    A --> C["🤖 Intent Engine"]
+    B --> D["⚠️ Risk Engine"]
+    C --> D
+    D --> E["📜 Policy Engine"]
+    E --> F["⚖️ Decision Fusion"]
+    F --> G(["✅ Final Action"])
+
+    style A fill:#00cec9,stroke:#00695c,color:#fff
+    style B fill:#6c5ce7,stroke:#341f97,color:#fff
+    style C fill:#fd79a8,stroke:#b53471,color:#fff
+    style D fill:#fab1a0,stroke:#e17055,color:#2d3436
+    style E fill:#ffeaa7,stroke:#fdcb6e,color:#2d3436
+    style F fill:#74b9ff,stroke:#0984e3,color:#fff
+    style G fill:#55efc4,stroke:#00b894,color:#2d3436
+```
 
 ---
 
@@ -62,6 +102,14 @@ Every stage produces a typed, explainable output that is threaded through to a f
 - 🧪 158 automated tests across unit / integration / concurrency / security / validation layers
 - 📈 End-to-end offline training pipeline with synthetic dataset generation
 
+<div align="center">
+
+| 🧠 Neural | 🤖 LLM | ⚠️ Risk | 📜 Policy | ⚖️ Fusion | 🔍 Audit |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| 4 heads | Schema-validated | 5-factor breakdown | 11 hot rules | 6 strategies | 31-field trace |
+
+</div>
+
 ---
 
 ## Complete Architecture Graph
@@ -69,35 +117,36 @@ Every stage produces a typed, explainable output that is threaded through to a f
 ### High-level system view
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#0984e3','primaryTextColor':'#fff','primaryBorderColor':'#2d3436','lineColor':'#636e72'}}}%%
 flowchart TD
-    Client["Client / Dashboard\n(dashboard.py via app.py)"] -->|HTTP POST /authenticate\nX-API-Key: optional| API
+    Client(["💻 Client / Dashboard\n(dashboard.py via app.py)"]) -->|HTTP POST /authenticate\nX-API-Key: optional| API
 
-    subgraph API["api/server.py — FastAPI"]
-        Lifespan["lifespan()\neager-loads every engine\nfails fast on error"]
-        Auth["require_api_key()\nDepends() — opt-in via\nTRANSACTION_ENGINE_API_KEY"]
-        Route["authenticate()\nrequest_id, generic error handling"]
+    subgraph API["🚀 api/server.py — FastAPI"]
+        Lifespan["🟢 lifespan()\neager-loads every engine\nfails fast on error"]
+        Auth["🔑 require_api_key()\nDepends() — opt-in"]
+        Route["📥 authenticate()\nrequest_id, generic error handling"]
     end
 
-    Route --> FE["FeatureExtractor.extract()\n→ FeatureVector (31 fields)"]
-    FE --> Pred["AuthenticationPredictor\n(inference/predictor.py)\nthread-safe lazy singleton"]
-    Pred --> Net["AuthenticationNetwork\n(engines/authentication_network.py)\ntrust / risk / decision / confidence heads"]
-    Net --> AuthResult["AuthenticationResult\ntrust_score, risk_score, confidence,\nrecommended_action, decision_probabilities,\nattributions"]
+    Route --> FE["🧩 FeatureExtractor.extract()\n→ FeatureVector (31 fields)"]
+    FE --> Pred["🧠 AuthenticationPredictor\nthread-safe lazy singleton"]
+    Pred --> Net["🕸 AuthenticationNetwork\ntrust / risk / decision / confidence heads"]
+    Net --> AuthResult["📊 AuthenticationResult"]
 
-    Route --> IE["IntentEngine.parse()\n(LLM + schema validation + retries)"]
-    IE --> Txn["Transaction\nintent, amount, beneficiary_type, confidence"]
+    Route --> IE["🤖 IntentEngine.parse()\nLLM + schema validation + retries"]
+    IE --> Txn["💬 Transaction\nintent, amount, beneficiary_type"]
 
-    AuthResult --> RE["RiskEngine.evaluate()"]
+    AuthResult --> RE["⚠️ RiskEngine.evaluate()"]
     FE --> RE
     Txn --> RE
-    RE --> RiskResult["RiskResult\noverall_risk, risk_level, breakdown"]
+    RE --> RiskResult["📈 RiskResult"]
 
-    AuthResult --> PC["policy_context.py\nclassify_location_familiarity()\nclassify_time_familiarity()\nparse_request_timestamp()"]
+    AuthResult --> PC["🗂 policy_context.py"]
     FE --> PC
     Txn --> PC
-    PC --> PI["PolicyInput"]
+    PC --> PI["📦 PolicyInput"]
     RiskResult --> PI
-    PI --> PE["PolicyEngine.evaluate()\n(rules/policy_rules.yaml,\nhot-reloadable)"]
-    PE --> PolicyResult["PolicyResult\nrequired_action, priority,\nmatched_policy, rule_trace"]
+    PI --> PE["📜 PolicyEngine.evaluate()\npolicy_rules.yaml"]
+    PE --> PolicyResult["✅ PolicyResult"]
 
     AuthResult --> DE
     RiskResult --> DE
@@ -105,143 +154,72 @@ flowchart TD
     Txn --> DE
     FE --> DE
 
-    subgraph DE["DecisionEngine.decide() (engines/decision/)"]
-        Fusion["Fusion Strategy\n(RiskWeightedFusion default)"]
-        Explain["ExplanationBuilder\ntop_reasons / top_attributions"]
-        AuditB["AuditBuilder\nfeature_vector, decision_trace,\ndecision_graph"]
-        Meta["MetadataBuilder"]
-        Hist["HistoryStore"]
-        Metrics["MetricsCollector"]
+    subgraph DE["⚖️ DecisionEngine.decide()"]
+        Fusion["🔀 Fusion Strategy"]
+        Explain["💡 ExplanationBuilder"]
+        AuditB["📁 AuditBuilder"]
+        Meta["🏷 MetadataBuilder"]
+        Hist["🕘 HistoryStore"]
+        Metrics["📉 MetricsCollector"]
     end
 
-    DE --> DecisionResult["DecisionResult\naction, transaction_allowed,\naudit_log"]
-    DecisionResult --> Response["TransactionResponse\n(JSON)"]
+    DE --> DecisionResult["🎯 DecisionResult"]
+    DecisionResult --> Response["📤 TransactionResponse (JSON)"]
     Response --> Client
-```
 
-### Full layered view (text form)
+    classDef client fill:#00b894,stroke:#00694c,color:#fff,stroke-width:2px
+    classDef apilayer fill:#0984e3,stroke:#053e6e,color:#fff,stroke-width:2px
+    classDef feature fill:#6c5ce7,stroke:#341f97,color:#fff,stroke-width:2px
+    classDef intent fill:#fd79a8,stroke:#b53471,color:#fff,stroke-width:2px
+    classDef risk fill:#e17055,stroke:#a84832,color:#fff,stroke-width:2px
+    classDef policy fill:#fdcb6e,stroke:#e1a83c,color:#2d3436,stroke-width:2px
+    classDef decision fill:#00cec9,stroke:#008b87,color:#fff,stroke-width:2px
+    classDef out fill:#55efc4,stroke:#00b894,color:#2d3436,stroke-width:2px
 
-```text
-┌──────────────────────────────────────────────────────────────────────────┐
-│                              CLIENT LAYER                                │
-│   dashboard.py (NiceGUI UI)  ──launched by──>  app.py                    │
-│   OR any direct HTTP caller (curl, service-to-service, etc.)             │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                     │  POST /authenticate
-                                     │  [X-API-Key header, optional]
-                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                      api/server.py  (FastAPI application)                │
-│                                                                          │
-│  lifespan()  ── eager-loads every engine at process startup ──         │
-│      • get_predictor()        (AuthenticationPredictor)                 │
-│      • get_intent_engine()    (IntentEngine, loads LLM)                 │
-│      • get_risk_engine()      (RiskEngine)                              │
-│      • get_policy_engine()    (PolicyEngine, loads rules YAML)          │
-│      • get_decision_engine()  (DecisionEngine)                         │
-│      Any failure ⇒ startup aborts, process never serves traffic.        │
-│      Each getter is double-checked-locked (threading.Lock) so           │
-│      concurrent callers can never construct >1 instance.                │
-│                                                                          │
-│  require_api_key()  ── Depends() on POST /authenticate ──               │
-│      off by default; enforced when TRANSACTION_ENGINE_API_KEY is set    │
-│                                                                          │
-│  authenticate(request: TransactionRequest)                              │
-│      • Pydantic validation (GPS bounds, non-negative speed,             │
-│        non-blank user_id/transcript, ISO-8601 timestamp) → 422          │
-│      • request_id generated for correlation                            │
-│      • unhandled exceptions → generic message + request_id to client,   │
-│        full stack trace logged server-side only                        │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  1. FEATURE EXTRACTION   engines/feature_extractor.py                    │
-│     raw request dict ──► FeatureVector (models/feature_vector.py)        │
-│     31 fields: identity(5) + biometrics(4) + behavior(5) + vehicle(6)    │
-│               + history(4) + transaction(4) + intent(2) + risk(1)        │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  2. AUTHENTICATION NETWORK   inference/predictor.py                      │
-│     AuthenticationPredictor (thread-safe lazy singleton)                 │
-│       • loads + cross-validates: checkpoint (.pth), scaler (.pkl),       │
-│         encoder (.pkl), feature_columns.json, model_info.json,          │
-│         class_mapping.json                                              │
-│       • preprocess() → tensor → AuthenticationNetwork (forward pass)     │
-│       • Prediction.to_result() → AuthenticationResult                   │
-│                                                                          │
-│     engines/authentication_network.py                                   │
-│       FeatureVector ─► FeatureAttention ─► ProjectionLayer               │
-│                     ─► ResidualEncoder ─► Shared Embedding               │
-│                     ├─► Trust Head        (trust_score)                 │
-│                     ├─► Risk Head         (risk_score)                  │
-│                     ├─► Decision Head     (decision_probabilities)      │
-│                     └─► Confidence Head   (confidence, confidence_std)   │
-│     Output: AuthenticationResult(trust_score, risk_score, confidence,    │
-│             recommended_action, decision_probabilities, attributions)   │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  3. INTENT ENGINE   engines/intent_engine.py                             │
-│     transcript ──► LLM (config-selected LIGHT/HEAVY backend)             │
-│         ──► schema validation ──► retry-on-failure (max_retries)         │
-│         ──► beneficiary SAVED/NEW/UNKNOWN classification                 │
-│     Output: Transaction(intent, amount, beneficiary_type, confidence)   │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  4. RISK ENGINE   engines/risk_engine.py                                 │
-│     Does NOT compute risk itself — standardizes the Authentication       │
-│     Network's risk_score into a typed contract + auditable breakdown:    │
-│       overall_risk, risk_level (LOW/MEDIUM/HIGH/CRITICAL), confidence,   │
-│       breakdown{voice_risk, behavior_risk, location_risk,                │
-│                  device_risk, transaction_risk}                         │
-│     Deliberately produces NO recommended action — risk assesses,        │
-│     Decision Fusion (stage 6) is the only place risk becomes a verdict. │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  5. POLICY ENGINE   engines/policy_engine.py + policy_context.py         │
-│     policy_context.py translates continuous FeatureVector scores into    │
-│     the categorical labels the rules key off of:                        │
-│       classify_location_familiarity(score) → FAMILIAR | UNFAMILIAR       │
-│       classify_time_familiarity(score, ts) → NORMAL | ODD_HOUR           │
-│     PolicyInput{trust_score, risk_score, confidence, network_decision,   │
-│       intent, intent_confidence, risk_level, transaction_amount,         │
-│       beneficiary_type, location_familiarity, time_familiarity,          │
-│       previous_trust_score, failed_attempts}                            │
-│                     │                                                   │
-│                     ▼  evaluated against rules/policy_rules.yaml         │
-│     11 hot-reloadable rules (priority-ordered, e.g. RejectCriticalRisk,  │
-│     ManualReviewRepeatedFailures, UnfamiliarLocation, OddHourActivity,   │
-│     NewBeneficiary, LargeTransaction, ...) — falls back to an in-code    │
-│     default ruleset only if the YAML file is missing.                   │
-│     Output: PolicyResult(required_action, priority, matched_policy,      │
-│                           rule_trace, policy_score)                     │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  6. DECISION ENGINE   engines/decision/  (see full internals below)      │
-│     Fuses AI recommendation + Policy recommendation (+ any extra         │
-│     recommenders) into ONE explainable, audited final action.           │
-│     Output: DecisionResult(action, transaction_allowed,                 │
-│                             authentication_required, voice_required,    │
-│                             otp_required, manual_review, audit_log)      │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                     ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  7. API RESPONSE   models/response.py :: TransactionResponse             │
-│     status, action, transaction_allowed, authentication_required,       │
-│     voice_required, otp_required, manual_review, message, reason,       │
-│     audit_log { metadata, decision_trace, decision_graph, top_reasons,   │
-│                 top_attributions, feature_vector (all 31 fields),        │
-│                 timeline_ms, decision_history, transaction }             │
-└──────────────────────────────────────────────────────────────────────────┘
+    class Client client
+    class API,Lifespan,Auth,Route apilayer
+    class FE,Pred,Net,AuthResult feature
+    class IE,Txn intent
+    class RE,RiskResult risk
+    class PC,PI,PE,PolicyResult policy
+    class DE,Fusion,Explain,AuditB,Meta,Hist,Metrics decision
+    class DecisionResult,Response out
 ```
 
 ---
 
 ## Request Lifecycle, Step by Step
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#6c5ce7','primaryTextColor':'#fff','actorBkg':'#0984e3','actorBorder':'#053e6e','actorTextColor':'#fff','signalColor':'#2d3436','signalTextColor':'#2d3436','activationBorderColor':'#00b894','activationBkgColor':'#dff9fb'}}}%%
+sequenceDiagram
+    participant C as 💻 Client
+    participant API as 🚀 API
+    participant FE as 🧩 Features
+    participant NN as 🧠 Neural Net
+    participant IE as 🤖 Intent
+    participant RE as ⚠️ Risk
+    participant PE as 📜 Policy
+    participant DE as ⚖️ Decision
+
+    C->>API: POST /authenticate
+    Note over API: Pydantic validation (422 on failure)
+    Note over API: X-API-Key check (401 on mismatch)
+    API->>FE: extract(request)
+    FE-->>API: FeatureVector (31 fields)
+    API->>NN: predict(features)
+    NN-->>API: trust / risk / confidence
+    API->>IE: parse(transcript)
+    IE-->>API: Transaction
+    API->>RE: evaluate(auth, features, txn)
+    RE-->>API: RiskResult
+    API->>PE: evaluate(policy_input)
+    PE-->>API: PolicyResult (rule_trace)
+    API->>DE: decide(auth, risk, policy, txn)
+    Note over DE: Policy CRITICAL priority always wins
+    DE-->>API: DecisionResult + audit_log
+    API-->>C: TransactionResponse (JSON)
+```
 
 1. `POST /authenticate` arrives with a `TransactionRequest` JSON body.
 2. **Validation** — Pydantic rejects blank `user_id`/`transcript`, out-of-range GPS coordinates, negative speed, or malformed timestamps with a `422` before any engine runs.
@@ -258,33 +236,29 @@ flowchart TD
 
 ## Startup & Shutdown Lifecycle
 
-```text
-process start
-     │
-     ▼
-FastAPI lifespan() enters
-     │
-     ├─► get_predictor()        ─┐
-     ├─► get_intent_engine()     │  each call is guarded by its own
-     ├─► get_risk_engine()       │  threading.Lock with double-checked
-     ├─► get_policy_engine()     │  locking — safe even if hit concurrently
-     └─► get_decision_engine()  ─┘
-     │
-     ├─► any loader raises  ──►  logged CRITICAL, exception re-raised
-     │                            ──►  uvicorn/TestClient never finish
-     │                            starting — the process never serves
-     │                            traffic with a partially-loaded model.
-     │
-     ▼
-"Startup complete: all engines are warm." (logged)
-     │
-     ▼
-server accepts traffic — every request reuses the same 5 warm singletons,
-so the first real request pays ~0ms of model-loading cost (verified:
-~4.7s startup, ~4ms first request, in a real run with all real models).
-     │
-     ▼
-shutdown ──► lifespan() resumes after yield ──► "Shutdown complete." (logged)
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#00b894','primaryTextColor':'#fff','primaryBorderColor':'#00694c','lineColor':'#636e72'}}}%%
+stateDiagram-v2
+    [*] --> ProcessStart: process start
+    ProcessStart --> LifespanEnter: FastAPI lifespan() enters
+
+    state LifespanEnter {
+        [*] --> LoadPredictor: get_predictor()
+        LoadPredictor --> LoadIntent: get_intent_engine()
+        LoadIntent --> LoadRisk: get_risk_engine()
+        LoadRisk --> LoadPolicy: get_policy_engine()
+        LoadPolicy --> LoadDecision: get_decision_engine()
+        LoadDecision --> [*]
+    }
+
+    LifespanEnter --> StartupFailed: ❌ any loader raises
+    StartupFailed --> [*]: process never serves traffic
+
+    LifespanEnter --> Warm: ✅ "Startup complete: all engines are warm"
+    Warm --> Serving: server accepts traffic\n(~4.7s startup, ~4ms first request)
+    Serving --> ShutdownResume: shutdown triggered
+    ShutdownResume --> Done: "Shutdown complete."
+    Done --> [*]
 ```
 
 ---
@@ -295,9 +269,46 @@ shutdown ──► lifespan() resumes after yield ──► "Shutdown complete."
 
 The central model. `FeatureVector → FeatureAttention → ProjectionLayer → ResidualEncoder → shared embedding → {Trust, Risk, Decision, Confidence} heads`. Also hosts the training loop, checkpoint I/O, an `ExperimentLogger`, MC-dropout uncertainty utilities, and a `DeepEnsemble` — see [Known Limitations](#known-limitations--roadmap) for why this file is flagged as a future decomposition candidate.
 
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#6c5ce7','primaryTextColor':'#fff','primaryBorderColor':'#341f97','lineColor':'#a29bfe'}}}%%
+flowchart LR
+    FV["🧩 FeatureVector"] --> FA["👁 FeatureAttention"]
+    FA --> PL["📐 ProjectionLayer"]
+    PL --> RE2["🔁 ResidualEncoder"]
+    RE2 --> EMB(("🌐 Shared\nEmbedding"))
+    EMB --> T["🤝 Trust Head"]
+    EMB --> R["⚠️ Risk Head"]
+    EMB --> D["🎯 Decision Head"]
+    EMB --> CF["📊 Confidence Head"]
+
+    style FV fill:#00cec9,stroke:#008b87,color:#fff
+    style FA fill:#74b9ff,stroke:#0984e3,color:#fff
+    style PL fill:#a29bfe,stroke:#6c5ce7,color:#fff
+    style RE2 fill:#fd79a8,stroke:#b53471,color:#fff
+    style EMB fill:#fdcb6e,stroke:#e1a83c,color:#2d3436
+    style T fill:#55efc4,stroke:#00b894,color:#2d3436
+    style R fill:#ff7675,stroke:#c0392b,color:#fff
+    style D fill:#74b9ff,stroke:#0984e3,color:#fff
+    style CF fill:#ffeaa7,stroke:#fdcb6e,color:#2d3436
+```
+
 ### Feature Extraction (`engines/feature_extractor.py`, `models/feature_vector.py`)
 
 Deterministic, ML-free transformation of a raw request into the 31-field `FeatureVector`. No scoring, no normalization, no tensor conversion — that's the inference layer's job.
+
+```mermaid
+%%{init: {'theme':'base'}}%%
+pie showData
+    title FeatureVector — 31 Fields by Category
+    "Identity (5)" : 5
+    "Biometrics (4)" : 4
+    "Behavior (5)" : 5
+    "Vehicle (6)" : 6
+    "History (4)" : 4
+    "Transaction (4)" : 4
+    "Intent (2)" : 2
+    "Risk (1)" : 1
+```
 
 ### Inference (`inference/predictor.py`)
 
@@ -310,6 +321,17 @@ Wraps an LLM (HF pipeline, LIGHT/HEAVY backend selectable via `config/intent/con
 ### Risk Engine (`engines/risk_engine.py`)
 
 Standardizes the network's risk score into `overall_risk`, `risk_level`, and an auditable `breakdown` — deliberately produces no recommended action of its own.
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'pie1':'#00b894','pie2':'#fdcb6e','pie3':'#e17055','pie4':'#6c5ce7','pie5':'#0984e3'}}}%%
+pie showData
+    title Risk Breakdown Weighting (illustrative)
+    "Voice Risk" : 20
+    "Behavior Risk" : 20
+    "Location Risk" : 25
+    "Device Risk" : 15
+    "Transaction Risk" : 20
+```
 
 ### Policy Context (`engines/policy_context.py`)
 
@@ -333,26 +355,67 @@ A NiceGUI-based visualization client that talks to the API exclusively over HTTP
 
 `engines/decision/` is a package, each module with exactly one responsibility:
 
-```text
-engines/decision/
-├── decision_engine.py   DecisionEngine — orchestration only, calls everything below in order
-├── config.py            DecisionConfig — thresholds, source weights, externalizable via YAML
-├── fusion.py             Pluggable strategies (all implement DecisionFusionStrategy):
-│                           MajorityVoting · WeightedVoting · RiskWeightedFusion (default)
-│                           · BayesianFusion · RiskFirst · PolicyFirst
-├── explanation.py        ExplanationBuilder — top_reasons() / top_contributors() (model attributions)
-├── audit.py              AuditBuilder — decision_trace, decision_graph, feature_vector, rule_trace
-├── metadata.py           MetadataBuilder — request_id / decision_trace_id / model & policy versions
-├── history.py            HistoryStore (InMemoryHistoryStore default) — per-user recent-action recall
-├── metrics.py             MetricsCollector — decision counters for monitoring
-├── hooks.py               HookRegistry — before/after_fusion, before/after_audit extension points
-├── ensemble.py            combine_ensemble_predictions — merges multiple AuthenticationResults
-├── numeric.py             to_python() — safe tensor → plain-Python conversion
-├── serializers.py         to_json()
-└── types.py               DecisionAction, DecisionResult, PolicyPriority, Severity
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#0984e3','primaryTextColor':'#fff','primaryBorderColor':'#053e6e','lineColor':'#636e72'}}}%%
+flowchart TD
+    subgraph Pkg["⚖️ engines/decision/"]
+        DEng["🧭 decision_engine.py\norchestration only"]
+        Cfg["⚙️ config.py\nthresholds, weights"]
+        Fus["🔀 fusion.py\nMajority · Weighted · RiskWeighted (default)\nBayesian · RiskFirst · PolicyFirst"]
+        Expl["💡 explanation.py\ntop_reasons / top_contributors"]
+        Aud["📁 audit.py\ndecision_trace, decision_graph, feature_vector"]
+        Meta2["🏷 metadata.py\nrequest_id / trace_id / versions"]
+        Hist2["🕘 history.py\nInMemoryHistoryStore"]
+        Metr["📉 metrics.py\ndecision counters"]
+        Hooks["🪝 hooks.py\nbefore/after hooks"]
+        Ens["🧬 ensemble.py\ncombine predictions"]
+        Num["🔢 numeric.py\nto_python()"]
+        Ser["📤 serializers.py\nto_json()"]
+        Types["🏗 types.py\nDecisionAction, DecisionResult"]
+    end
+
+    DEng --> Cfg
+    DEng --> Fus
+    DEng --> Expl
+    DEng --> Aud
+    DEng --> Meta2
+    DEng --> Hist2
+    DEng --> Metr
+    DEng --> Hooks
+    Fus --> Ens
+    Aud --> Num
+    Aud --> Ser
+    DEng --> Types
+
+    classDef core fill:#6c5ce7,stroke:#341f97,color:#fff,stroke-width:2px
+    classDef support fill:#00cec9,stroke:#008b87,color:#fff,stroke-width:2px
+    classDef util fill:#fdcb6e,stroke:#e1a83c,color:#2d3436,stroke-width:2px
+    class DEng core
+    class Cfg,Fus,Expl,Aud support
+    class Meta2,Hist2,Metr,Hooks,Ens,Num,Ser,Types util
 ```
 
 `DecisionEngine.decide(authentication, risk, policy, intent=None, transaction=None, features=None, ...)` fuses the AI vote and the Policy vote (plus any `additional_recommendations`) via the configured strategy, builds `top_reasons` and `top_attributions` (the model's own top-5 attribution/attention scores — **not** the feature vector), and assembles the full audit trail — including, since the most recent fix, the complete 31-field `feature_vector` under `audit_log["feature_vector"]`, so dashboards can inspect every engineered signal, not just the top-5 model attributions.
+
+### Fusion Strategy Comparison
+
+```mermaid
+%%{init: {'theme':'base'}}%%
+quadrantChart
+    title Fusion Strategies — Determinism vs. Risk Sensitivity
+    x-axis Low Determinism --> High Determinism
+    y-axis Low Risk Sensitivity --> High Risk Sensitivity
+    quadrant-1 Cautious & Rigid
+    quadrant-2 Cautious & Adaptive
+    quadrant-3 Loose & Rigid
+    quadrant-4 Loose & Adaptive
+    "MajorityVoting": [0.7, 0.3]
+    "WeightedVoting": [0.6, 0.5]
+    "RiskWeightedFusion (default)": [0.55, 0.85]
+    "BayesianFusion": [0.35, 0.7]
+    "RiskFirst": [0.8, 0.95]
+    "PolicyFirst": [0.9, 0.6]
+```
 
 ---
 
@@ -411,17 +474,25 @@ Transaction_engine/
 
 Verified to be a clean DAG — no circular imports anywhere in the runtime path:
 
-```text
-models/  ◄──  config/   (independent leaves)
-   ▲             ▲
-   │             │
-   └──── engines/ ────┘
-            ▲
-            │
-      inference/
-            ▲
-            │
-          api/
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#00b894','primaryTextColor':'#fff','primaryBorderColor':'#00694c','lineColor':'#636e72'}}}%%
+flowchart BT
+    Models["📦 models/"]
+    Config["⚙️ config/"]
+    Engines["🧩 engines/"]
+    Inference["🧠 inference/"]
+    Api["🚀 api/"]
+
+    Models --> Engines
+    Config --> Engines
+    Engines --> Inference
+    Inference --> Api
+
+    style Models fill:#74b9ff,stroke:#0984e3,color:#fff
+    style Config fill:#74b9ff,stroke:#0984e3,color:#fff
+    style Engines fill:#6c5ce7,stroke:#341f97,color:#fff
+    style Inference fill:#fd79a8,stroke:#b53471,color:#fff
+    style Api fill:#00cec9,stroke:#008b87,color:#fff
 ```
 
 - `api/server.py` → `models.*`, `engines.*`, `inference.predictor`
@@ -429,6 +500,51 @@ models/  ◄──  config/   (independent leaves)
 - `engines/feature_extractor.py` → `models.feature_vector`
 - `engines/intent_engine.py` → `config.intent.config`
 - Nothing under `engines/`, `models/`, or `config/` imports from `api/` or `inference/` — the business/ML layer has zero knowledge of the web layer (correct dependency inversion).
+
+---
+
+## Testing Pyramid
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#fdcb6e','primaryTextColor':'#2d3436','primaryBorderColor':'#e1a83c','lineColor':'#636e72'}}}%%
+flowchart TD
+    Sec["🛡 Security — test_api_security.py"]
+    Val["✅ Validation — test_request_validation.py"]
+    Conc["🧵 Concurrency — test_concurrency.py"]
+    Start["🟢 Startup/Lifecycle — test_startup.py"]
+    Int["🔗 Integration — test_pipeline_integration.py, test_api.py"]
+    Unit["🧩 Unit — feature_extractor, policy, network, intent"]
+
+    Unit --> Int --> Start --> Conc --> Val --> Sec
+
+    style Unit fill:#55efc4,stroke:#00b894,color:#2d3436
+    style Int fill:#74b9ff,stroke:#0984e3,color:#fff
+    style Start fill:#a29bfe,stroke:#6c5ce7,color:#fff
+    style Conc fill:#fd79a8,stroke:#b53471,color:#fff
+    style Val fill:#fdcb6e,stroke:#e1a83c,color:#2d3436
+    style Sec fill:#ff7675,stroke:#c0392b,color:#fff
+```
+
+---
+
+## Security Layers
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#e17055','primaryTextColor':'#fff','primaryBorderColor':'#a84832','lineColor':'#636e72'}}}%%
+flowchart LR
+    R["📥 Incoming Request"] --> V["✅ Pydantic Validation\nGPS · speed · timestamp · blank fields"]
+    V --> K["🔑 API-Key Gate\nopt-in via env var"]
+    K --> P["🧠 Pipeline Execution"]
+    P --> E["🙈 Error Sanitization\ngeneric message + request_id"]
+    E --> Out["📤 Safe Response"]
+
+    style R fill:#dfe6e9,stroke:#636e72,color:#2d3436
+    style V fill:#74b9ff,stroke:#0984e3,color:#fff
+    style K fill:#fdcb6e,stroke:#e1a83c,color:#2d3436
+    style P fill:#6c5ce7,stroke:#341f97,color:#fff
+    style E fill:#ff7675,stroke:#c0392b,color:#fff
+    style Out fill:#55efc4,stroke:#00b894,color:#2d3436
+```
 
 ---
 
@@ -508,6 +624,37 @@ All tests run against the real engines wherever practical (e.g. `test_pipeline_i
 
 ## Milestones
 
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'cScale0':'#00b894','cScale1':'#0984e3','cScale2':'#fdcb6e'}}}%%
+timeline
+    title NeuralAuth Milestone Timeline
+    section Foundation
+        M0 Foundation : ✅ done
+        M1 Feature Extraction : ✅ done
+        M2 Authentication Network : ✅ done
+    section Intelligence
+        M3 Training Pipeline : ✅ done
+        M4 Intent Engine : ✅ done
+        M5 Risk Engine : ✅ done
+        M6 Policy Engine : ✅ done
+    section Decisioning
+        M7 Decision Engine v1 : ✅ done
+        M8 Enterprise Decision Package : ✅ done
+        M9 Decision Fusion : ✅ done
+        M10 End-to-End Pipeline : ✅ done
+    section Hardening
+        M11 Explainability : ✅ done
+        M12 Startup & Thread Safety : ✅ done
+        M13 Security Hardening : ✅ done
+        M14 Testing & Validation : ✅ done
+    section What's Next
+        M15 Explainability Dashboard : 🚧 in progress
+        M16 Monitoring & Analytics : ⏳ planned
+        M17 PII Redaction : ⏳ planned
+        M18 Rate Limiting : ⏳ planned
+        M19 Deployment CI/CD : ⏳ planned
+```
+
 | Milestone | Status |
 |------------|--------|
 | M0 – Foundation | ✅ |
@@ -535,15 +682,46 @@ All tests run against the real engines wherever practical (e.g. `test_pipeline_i
 
 ## Tech Stack
 
-- Python 3.11+
-- PyTorch
-- FastAPI + Uvicorn + Pydantic v2
-- NumPy / Pandas / Scikit-Learn
-- Transformers (HF pipeline for the Intent Engine)
-- ONNX / ONNX Runtime
-- PyYAML
-- NiceGUI (dashboard)
-- pytest
+<div align="center">
+
+| Layer | Technologies |
+|---|---|
+| 🧠 ML / Modeling | PyTorch, ONNX / ONNX Runtime, Scikit-Learn |
+| 🤖 LLM | Transformers (HF pipeline) |
+| 🚀 API | FastAPI, Uvicorn, Pydantic v2 |
+| 📊 Data | NumPy, Pandas |
+| ⚙️ Config | PyYAML |
+| 🖥 Dashboard | NiceGUI |
+| 🧪 Testing | pytest |
+| 🐍 Runtime | Python 3.11+ |
+
+</div>
+
+```mermaid
+%%{init: {'theme':'base'}}%%
+mindmap
+  root(("🧠 NeuralAuth\nTech Stack"))
+    ML/Modeling
+      PyTorch
+      ONNX Runtime
+      Scikit-Learn
+    LLM
+      Transformers
+      HF Pipeline
+    API
+      FastAPI
+      Uvicorn
+      Pydantic v2
+    Data
+      NumPy
+      Pandas
+    Config
+      PyYAML
+    Dashboard
+      NiceGUI
+    Testing
+      pytest
+```
 
 ---
 
@@ -557,6 +735,21 @@ Identified during the most recent architecture/security review, tracked delibera
 - **Two large, multi-concern modules** — `engines/authentication_network.py` (architecture + training loop + checkpointing) and `engines/intent_engine.py` (LLM driving + validation/normalization) are flagged for a dedicated, test-first decomposition, not an incidental refactor.
 - **Config loading is inconsistent** across `config/intent`, `engines/authentication_network.ModelConfig`, `engines/decision/config.py`, and `engines/policy_engine.py` — four different loading philosophies; worth unifying once a second real YAML-driven `DecisionConfig` consumer exists.
 - **Dependency versions are unpinned** in `requirements.txt` — flagged for a proper `pip-compile`-style resolution pass.
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ff7675','primaryTextColor':'#fff','primaryBorderColor':'#c0392b','lineColor':'#636e72'}}}%%
+flowchart TD
+    A["🔴 PII in Audit Trail"]:::high
+    B["🟠 torch.load weights_only=False"]:::med
+    C["🟠 No Rate Limiting"]:::med
+    D["🟡 Large Multi-Concern Modules"]:::low
+    E["🟡 Inconsistent Config Loading"]:::low
+    F["🟡 Unpinned Dependencies"]:::low
+
+    classDef high fill:#ff7675,stroke:#c0392b,color:#fff,stroke-width:2px
+    classDef med fill:#fab1a0,stroke:#e17055,color:#2d3436,stroke-width:2px
+    classDef low fill:#ffeaa7,stroke:#fdcb6e,color:#2d3436,stroke-width:2px
+```
 
 ---
 
@@ -583,5 +776,7 @@ This project is released under the MIT License.
 ### Intelligent Authentication Through Deep Learning
 
 **Secure • Explainable • Adaptive**
+
+🧠 ⚡ 🔒 📊 ✅
 
 </div>

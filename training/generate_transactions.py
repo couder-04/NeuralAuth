@@ -34,7 +34,7 @@ OUTPUT = Path("training/data/transactions.csv")
 # Transaction Generator
 # ==========================================================
 
-def generate_transaction_row(user: pd.Series) -> dict:
+def generate_transaction_row(user: dict) -> dict:
     """
     Generate one transaction for a user.
     """
@@ -49,7 +49,7 @@ def generate_transaction_row(user: pd.Series) -> dict:
 
     row = {
 
-        **user.to_dict(),
+        **user,
 
         # Transaction (5)
         **transaction,
@@ -70,13 +70,16 @@ def main():
 
     users = pd.read_csv(INPUT)
 
-    rows = []
-
-    for _, user in users.iterrows():
-
-        rows.append(
-            generate_transaction_row(user)
-        )
+    # NOTE: `DataFrame.iterrows()` yields each row as a `pd.Series`, which
+    # forces every value in that row to a single common dtype (float64,
+    # since the frame also has float columns). That silently corrupts every
+    # integer column (user_id, kyc_verified, account_age_days, ...) into
+    # floats. `to_dict("records")` preserves each column's original scalar
+    # dtype per cell, so we use that instead.
+    rows = [
+        generate_transaction_row(user)
+        for user in users.to_dict("records")
+    ]
 
     df = pd.DataFrame(rows)
 
