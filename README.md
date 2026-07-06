@@ -68,13 +68,13 @@ Every stage produces a typed, explainable output that is threaded through to a f
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#6C5CE7','primaryTextColor':'#fff','primaryBorderColor':'#4834d4','lineColor':'#a29bfe','secondaryColor':'#00b894','tertiaryColor':'#fdcb6e'}}}%%
 flowchart LR
-    A(["🎙 Voice + Context"]) --> B["🧠 Neural Network"]
-    A --> C["🤖 Intent Engine"]
-    B --> D["⚠️ Risk Engine"]
+    A(["🎙<br/>Voice + Context"]) --> B["🧠<br/>Neural Network"]
+    A --> C["🤖<br/>Intent Engine"]
+    B --> D["⚠️<br/>Risk Engine"]
     C --> D
-    D --> E["📜 Policy Engine"]
-    E --> F["⚖️ Decision Fusion"]
-    F --> G(["✅ Final Action"])
+    D --> E["📜<br/>Policy Engine"]
+    E --> F["⚖️<br/>Decision Fusion"]
+    F --> G(["✅<br/>Final Action"])
 
     style A fill:#00cec9,stroke:#00695c,color:#fff
     style B fill:#6c5ce7,stroke:#341f97,color:#fff
@@ -119,34 +119,34 @@ flowchart LR
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#0984e3','primaryTextColor':'#fff','primaryBorderColor':'#2d3436','lineColor':'#636e72'}}}%%
 flowchart TD
-    Client(["💻 Client / Dashboard<br/>dashboard.py via app.py"]) -->|"POST /authenticate<br/>X-API-Key: optional"| API
+    Client(["💻<br/>Client / Dashboard<br/>dashboard.py"]) -->|"POST /authenticate<br/>X-API-Key: optional"| API
 
     subgraph API["🚀 api/server.py — FastAPI"]
-        Lifespan["🟢 lifespan()<br/>eager-loads every engine<br/>fails fast on error"]
-        Auth["🔑 require_api_key()<br/>Depends() — opt-in"]
-        Route["📥 authenticate()<br/>request_id<br/>generic error handling"]
+        Lifespan["🟢<br/>lifespan()<br/>eager-loads engines<br/>fails fast on error"]
+        Auth["🔑<br/>require_api_key()<br/>opt-in"]
+        Route["📥<br/>authenticate()<br/>request_id"]
     end
 
-    Route --> FE["🧩 FeatureExtractor.extract()<br/>→ FeatureVector (31 fields)"]
-    FE --> Pred["🧠 AuthenticationPredictor<br/>thread-safe lazy singleton"]
-    Pred --> Net["🕸 AuthenticationNetwork<br/>trust · risk · decision<br/>confidence heads"]
-    Net --> AuthResult["📊 AuthenticationResult"]
+    Route --> FE["🧩<br/>FeatureExtractor<br/>31-field vector"]
+    FE --> Pred["🧠<br/>Authentication<br/>Predictor"]
+    Pred --> Net["🕸<br/>Authentication<br/>Network"]
+    Net --> AuthResult["📊<br/>AuthResult"]
 
-    Route --> IE["🤖 IntentEngine.parse()<br/>LLM + schema validation + retries"]
-    IE --> Txn["💬 Transaction<br/>intent, amount, beneficiary_type"]
+    Route --> IE["🤖<br/>IntentEngine<br/>LLM parse"]
+    IE --> Txn["💬<br/>Transaction"]
 
-    AuthResult --> RE["⚠️ RiskEngine.evaluate()"]
+    AuthResult --> RE["⚠️<br/>RiskEngine"]
     FE --> RE
     Txn --> RE
-    RE --> RiskResult["📈 RiskResult"]
+    RE --> RiskResult["📈<br/>RiskResult"]
 
-    AuthResult --> PC["🗂 policy_context.py"]
+    AuthResult --> PC["🗂<br/>policy_context"]
     FE --> PC
     Txn --> PC
-    PC --> PI["📦 PolicyInput"]
+    PC --> PI["📦<br/>PolicyInput"]
     RiskResult --> PI
-    PI --> PE["📜 PolicyEngine.evaluate()<br/>policy_rules.yaml"]
-    PE --> PolicyResult["✅ PolicyResult"]
+    PI --> PE["📜<br/>PolicyEngine"]
+    PE --> PolicyResult["✅<br/>PolicyResult"]
 
     AuthResult --> DE
     RiskResult --> DE
@@ -155,16 +155,16 @@ flowchart TD
     FE --> DE
 
     subgraph DE["⚖️ DecisionEngine.decide()"]
-        Fusion["🔀 Fusion Strategy"]
-        Explain["💡 ExplanationBuilder"]
-        AuditB["📁 AuditBuilder"]
-        Meta["🏷 MetadataBuilder"]
-        Hist["🕘 HistoryStore"]
-        Metrics["📉 MetricsCollector"]
+        Fusion["🔀<br/>Fusion"]
+        Explain["💡<br/>Explanation"]
+        AuditB["📁<br/>Audit"]
+        Meta["🏷<br/>Metadata"]
+        Hist["🕘<br/>History"]
+        Metrics["📉<br/>Metrics"]
     end
 
-    DE --> DecisionResult["🎯 DecisionResult"]
-    DecisionResult --> Response["📤 TransactionResponse (JSON)"]
+    DE --> DecisionResult["🎯<br/>Decision<br/>Result"]
+    DecisionResult --> Response["📤<br/>Response"]
     Response --> Client
 
     classDef client fill:#00b894,stroke:#00694c,color:#fff,stroke-width:2px
@@ -193,14 +193,14 @@ flowchart TD
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#6c5ce7','primaryTextColor':'#fff','actorBkg':'#0984e3','actorBorder':'#053e6e','actorTextColor':'#fff','signalColor':'#2d3436','signalTextColor':'#2d3436','activationBorderColor':'#00b894','activationBkgColor':'#dff9fb'}}}%%
 sequenceDiagram
-    participant C as 💻 Client
-    participant API as 🚀 API
-    participant FE as 🧩 Features
-    participant NN as 🧠 Neural Net
-    participant IE as 🤖 Intent
-    participant RE as ⚠️ Risk
-    participant PE as 📜 Policy
-    participant DE as ⚖️ Decision
+    participant C as Client
+    participant API as API
+    participant FE as Features
+    participant NN as Neural Net
+    participant IE as Intent
+    participant RE as Risk
+    participant PE as Policy
+    participant DE as Decision
 
     C->>API: POST /authenticate
     Note over API: Pydantic validation (422 on failure)
@@ -251,10 +251,10 @@ stateDiagram-v2
         LoadDecision --> [*]
     }
 
-    LifespanEnter --> StartupFailed: ❌ any loader raises
+    LifespanEnter --> StartupFailed: any loader raises
     StartupFailed --> [*]: process never serves traffic
 
-    LifespanEnter --> Warm: ✅ "Startup complete: all engines are warm"
+    LifespanEnter --> Warm: "Startup complete: all engines are warm"
     Warm --> Serving: server accepts traffic (~4.7s startup, ~4ms first request)
     Serving --> ShutdownResume: shutdown triggered
     ShutdownResume --> Done: "Shutdown complete."
@@ -272,14 +272,14 @@ The central model. `FeatureVector → FeatureAttention → ProjectionLayer → R
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#6c5ce7','primaryTextColor':'#fff','primaryBorderColor':'#341f97','lineColor':'#a29bfe'}}}%%
 flowchart LR
-    FV["🧩 FeatureVector"] --> FA["👁 FeatureAttention"]
-    FA --> PL["📐 ProjectionLayer"]
-    PL --> RE2["🔁 ResidualEncoder"]
-    RE2 --> EMB(("🌐 Shared<br/>Embedding"))
-    EMB --> T["🤝 Trust Head"]
-    EMB --> R["⚠️ Risk Head"]
-    EMB --> D["🎯 Decision Head"]
-    EMB --> CF["📊 Confidence Head"]
+    FV["🧩<br/>Feature<br/>Vector"] --> FA["👁<br/>Feature<br/>Attention"]
+    FA --> PL["📐<br/>Projection<br/>Layer"]
+    PL --> RE2["🔁<br/>Residual<br/>Encoder"]
+    RE2 --> EMB(("🌐<br/>Shared<br/>Embedding"))
+    EMB --> T["🤝<br/>Trust Head"]
+    EMB --> R["⚠️<br/>Risk Head"]
+    EMB --> D["🎯<br/>Decision Head"]
+    EMB --> CF["📊<br/>Confidence<br/>Head"]
 
     style FV fill:#00cec9,stroke:#008b87,color:#fff
     style FA fill:#74b9ff,stroke:#0984e3,color:#fff
@@ -359,19 +359,19 @@ A NiceGUI-based visualization client that talks to the API exclusively over HTTP
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#0984e3','primaryTextColor':'#fff','primaryBorderColor':'#053e6e','lineColor':'#636e72'}}}%%
 flowchart TD
     subgraph Pkg["⚖️ engines/decision/"]
-        DEng["🧭 decision_engine.py<br/>orchestration only"]
-        Cfg["⚙️ config.py<br/>thresholds, weights"]
-        Fus["🔀 fusion.py<br/>Majority · Weighted<br/>RiskWeighted (default)<br/>Bayesian · RiskFirst<br/>PolicyFirst"]
-        Expl["💡 explanation.py<br/>top_reasons<br/>top_contributors"]
-        Aud["📁 audit.py<br/>decision_trace<br/>decision_graph<br/>feature_vector"]
-        Meta2["🏷 metadata.py<br/>request_id · trace_id<br/>versions"]
-        Hist2["🕘 history.py<br/>InMemoryHistoryStore"]
-        Metr["📉 metrics.py<br/>decision counters"]
-        Hooks["🪝 hooks.py<br/>before/after hooks"]
-        Ens["🧬 ensemble.py<br/>combine predictions"]
-        Num["🔢 numeric.py<br/>to_python()"]
-        Ser["📤 serializers.py<br/>to_json()"]
-        Types["🏗 types.py<br/>DecisionAction<br/>DecisionResult"]
+        DEng["🧭<br/>decision_engine.py<br/>orchestration"]
+        Cfg["⚙️<br/>config.py<br/>thresholds"]
+        Fus["🔀<br/>fusion.py<br/>Majority · Weighted<br/>RiskWeighted<br/>Bayesian · RiskFirst<br/>PolicyFirst"]
+        Expl["💡<br/>explanation.py<br/>top_reasons"]
+        Aud["📁<br/>audit.py<br/>decision_trace<br/>feature_vector"]
+        Meta2["🏷<br/>metadata.py<br/>request_id"]
+        Hist2["🕘<br/>history.py<br/>HistoryStore"]
+        Metr["📉<br/>metrics.py<br/>counters"]
+        Hooks["🪝<br/>hooks.py<br/>before/after"]
+        Ens["🧬<br/>ensemble.py<br/>combine"]
+        Num["🔢<br/>numeric.py<br/>to_python()"]
+        Ser["📤<br/>serializers.py<br/>to_json()"]
+        Types["🏗<br/>types.py<br/>DecisionResult"]
     end
 
     DEng --> Cfg
@@ -477,11 +477,11 @@ Verified to be a clean DAG — no circular imports anywhere in the runtime path:
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#00b894','primaryTextColor':'#fff','primaryBorderColor':'#00694c','lineColor':'#636e72'}}}%%
 flowchart BT
-    Models["📦 models/"]
-    Config["⚙️ config/"]
-    Engines["🧩 engines/"]
-    Inference["🧠 inference/"]
-    Api["🚀 api/"]
+    Models["📦<br/>models/"]
+    Config["⚙️<br/>config/"]
+    Engines["🧩<br/>engines/"]
+    Inference["🧠<br/>inference/"]
+    Api["🚀<br/>api/"]
 
     Models --> Engines
     Config --> Engines
@@ -508,12 +508,12 @@ flowchart BT
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#fdcb6e','primaryTextColor':'#2d3436','primaryBorderColor':'#e1a83c','lineColor':'#636e72'}}}%%
 flowchart TD
-    Sec["🛡 Security — test_api_security.py"]
-    Val["✅ Validation — test_request_validation.py"]
-    Conc["🧵 Concurrency — test_concurrency.py"]
-    Start["🟢 Startup/Lifecycle — test_startup.py"]
-    Int["🔗 Integration — test_pipeline_integration.py, test_api.py"]
-    Unit["🧩 Unit — feature_extractor, policy, network, intent"]
+    Sec["🛡<br/>Security<br/>test_api_security.py"]
+    Val["✅<br/>Validation<br/>test_request_validation.py"]
+    Conc["🧵<br/>Concurrency<br/>test_concurrency.py"]
+    Start["🟢<br/>Startup / Lifecycle<br/>test_startup.py"]
+    Int["🔗<br/>Integration<br/>test_pipeline_integration.py"]
+    Unit["🧩<br/>Unit<br/>feature_extractor, policy,<br/>network, intent"]
 
     Unit --> Int --> Start --> Conc --> Val --> Sec
 
@@ -532,11 +532,11 @@ flowchart TD
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#e17055','primaryTextColor':'#fff','primaryBorderColor':'#a84832','lineColor':'#636e72'}}}%%
 flowchart LR
-    R["📥 Incoming Request"] --> V["✅ Pydantic Validation<br/>GPS · speed<br/>timestamp · blank fields"]
-    V --> K["🔑 API-Key Gate<br/>opt-in via env var"]
-    K --> P["🧠 Pipeline Execution"]
-    P --> E["🙈 Error Sanitization<br/>generic message + request_id"]
-    E --> Out["📤 Safe Response"]
+    R["📥<br/>Incoming<br/>Request"] --> V["✅<br/>Pydantic<br/>Validation"]
+    V --> K["🔑<br/>API-Key<br/>Gate"]
+    K --> P["🧠<br/>Pipeline<br/>Execution"]
+    P --> E["🙈<br/>Error<br/>Sanitization"]
+    E --> Out["📤<br/>Safe<br/>Response"]
 
     style R fill:#dfe6e9,stroke:#636e72,color:#2d3436
     style V fill:#74b9ff,stroke:#0984e3,color:#fff
@@ -629,30 +629,30 @@ All tests run against the real engines wherever practical (e.g. `test_pipeline_i
 timeline
     title NeuralAuth Milestone Timeline
     section Foundation
-        M0 Foundation : ✅ done
-        M1 Feature Extraction : ✅ done
-        M2 Authentication Network : ✅ done
+        M0 Foundation : done
+        M1 Feature Extraction : done
+        M2 Authentication Network : done
     section Intelligence
-        M3 Training Pipeline : ✅ done
-        M4 Intent Engine : ✅ done
-        M5 Risk Engine : ✅ done
-        M6 Policy Engine : ✅ done
+        M3 Training Pipeline : done
+        M4 Intent Engine : done
+        M5 Risk Engine : done
+        M6 Policy Engine : done
     section Decisioning
-        M7 Decision Engine v1 : ✅ done
-        M8 Enterprise Decision Package : ✅ done
-        M9 Decision Fusion : ✅ done
-        M10 End-to-End Pipeline : ✅ done
+        M7 Decision Engine v1 : done
+        M8 Enterprise Decision Package : done
+        M9 Decision Fusion : done
+        M10 End-to-End Pipeline : done
     section Hardening
-        M11 Explainability : ✅ done
-        M12 Startup & Thread Safety : ✅ done
-        M13 Security Hardening : ✅ done
-        M14 Testing & Validation : ✅ done
+        M11 Explainability : done
+        M12 Startup & Thread Safety : done
+        M13 Security Hardening : done
+        M14 Testing & Validation : done
     section What's Next
-        M15 Explainability Dashboard : 🚧 in progress
-        M16 Monitoring & Analytics : ⏳ planned
-        M17 PII Redaction : ⏳ planned
-        M18 Rate Limiting : ⏳ planned
-        M19 Deployment CI/CD : ⏳ planned
+        M15 Explainability Dashboard : in progress
+        M16 Monitoring & Analytics : planned
+        M17 PII Redaction : planned
+        M18 Rate Limiting : planned
+        M19 Deployment CI/CD : planned
 ```
 
 | Milestone | Status |
@@ -700,33 +700,33 @@ timeline
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#fdcb6e','primaryTextColor':'#2d3436','primaryBorderColor':'#e1a83c','lineColor':'#636e72'}}}%%
 flowchart TD
-    Root(("🧠 NeuralAuth<br/>Tech Stack"))
+    Root(("🧠<br/>NeuralAuth<br/>Tech Stack"))
 
-    Root --> ML["🔮 ML / Modeling"]
+    Root --> ML["🔮<br/>ML / Modeling"]
     ML --> ML1["PyTorch"]
     ML --> ML2["ONNX Runtime"]
     ML --> ML3["Scikit-Learn"]
 
-    Root --> LLM["🤖 LLM"]
+    Root --> LLM["🤖<br/>LLM"]
     LLM --> LLM1["Transformers"]
     LLM --> LLM2["HF Pipeline"]
 
-    Root --> API2["🚀 API"]
+    Root --> API2["🚀<br/>API"]
     API2 --> API1["FastAPI"]
     API2 --> API3["Uvicorn"]
     API2 --> API4["Pydantic v2"]
 
-    Root --> Data2["📊 Data"]
+    Root --> Data2["📊<br/>Data"]
     Data2 --> Data1["NumPy"]
     Data2 --> Data3["Pandas"]
 
-    Root --> Cfg2["⚙️ Config"]
+    Root --> Cfg2["⚙️<br/>Config"]
     Cfg2 --> Cfg1["PyYAML"]
 
-    Root --> Dash2["🖥 Dashboard"]
+    Root --> Dash2["🖥<br/>Dashboard"]
     Dash2 --> Dash1["NiceGUI"]
 
-    Root --> Test2["🧪 Testing"]
+    Root --> Test2["🧪<br/>Testing"]
     Test2 --> Test1["pytest"]
 
     classDef root fill:#fdcb6e,stroke:#e1a83c,color:#2d3436,stroke-width:3px
@@ -754,12 +754,12 @@ Identified during the most recent architecture/security review, tracked delibera
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#ff7675','primaryTextColor':'#fff','primaryBorderColor':'#c0392b','lineColor':'#636e72'}}}%%
 flowchart TD
-    A["🔴 PII in Audit Trail"]:::high
-    B["🟠 torch.load weights_only=False"]:::med
-    C["🟠 No Rate Limiting"]:::med
-    D["🟡 Large Multi-Concern Modules"]:::low
-    E["🟡 Inconsistent Config Loading"]:::low
-    F["🟡 Unpinned Dependencies"]:::low
+    A["🔴<br/>PII in Audit Trail"]:::high
+    B["🟠<br/>torch.load unsafe"]:::med
+    C["🟠<br/>No Rate Limiting"]:::med
+    D["🟡<br/>Large Modules"]:::low
+    E["🟡<br/>Inconsistent Config"]:::low
+    F["🟡<br/>Unpinned Deps"]:::low
 
     classDef high fill:#ff7675,stroke:#c0392b,color:#fff,stroke-width:2px
     classDef med fill:#fab1a0,stroke:#e17055,color:#2d3436,stroke-width:2px
