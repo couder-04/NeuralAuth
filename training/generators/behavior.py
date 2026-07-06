@@ -19,9 +19,11 @@ voice-command authentication system.
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
+
+from generators.fraud import FraudContext, blend
 
 
 # ==========================================================
@@ -61,71 +63,46 @@ class BehaviorGenerator:
     def generate(
         self,
         fraudulent: bool = False,
+        fraud_context: Optional[FraudContext] = None,
     ) -> BehaviorFeatures:
+
+        ctx = FraudContext.resolve(fraudulent, fraud_context)
 
         # --------------------------------------------
         # Command Familiarity
         # --------------------------------------------
 
-        if fraudulent:
+        impact_cf = ctx.feature_impact("behavior", "command_familiarity")
 
-            command_familiarity = np.clip(
+        command_familiarity = np.clip(
 
-                self.rng.normal(
-                    0.35,
-                    0.18,
-                ),
+            self.rng.normal(
+                blend(0.88, 0.35, impact_cf),
+                blend(0.08, 0.18, impact_cf),
+            ),
 
-                0,
-                1,
+            0,
+            1,
 
-            )
-
-        else:
-
-            command_familiarity = np.clip(
-
-                self.rng.normal(
-                    0.88,
-                    0.08,
-                ),
-
-                0,
-                1,
-
-            )
+        )
 
         # --------------------------------------------
         # Stress Score
         # --------------------------------------------
 
-        if fraudulent:
+        impact_stress = ctx.feature_impact("behavior", "stress_score")
 
-            stress_score = np.clip(
+        stress_score = np.clip(
 
-                self.rng.normal(
-                    0.72,
-                    0.15,
-                ),
+            self.rng.normal(
+                blend(0.22, 0.72, impact_stress),
+                blend(0.10, 0.15, impact_stress),
+            ),
 
-                0,
-                1,
+            0,
+            1,
 
-            )
-
-        else:
-
-            stress_score = np.clip(
-
-                self.rng.normal(
-                    0.22,
-                    0.10,
-                ),
-
-                0,
-                1,
-
-            )
+        )
 
         # --------------------------------------------
         # Hesitation Score
@@ -151,13 +128,11 @@ class BehaviorGenerator:
         # Lower if stressed
         # --------------------------------------------
 
-        if fraudulent:
+        impact_pron = ctx.feature_impact(
+            "behavior", "pronunciation_similarity"
+        )
 
-            base_pronunciation = 0.62
-
-        else:
-
-            base_pronunciation = 0.93
+        base_pronunciation = blend(0.93, 0.62, impact_pron)
 
         pronunciation_similarity = np.clip(
 
@@ -232,10 +207,12 @@ _generator = BehaviorGenerator()
 
 def generate_behavior(
     fraudulent: bool = False,
+    fraud_context: Optional[FraudContext] = None,
 ) -> Dict:
 
     return _generator.generate(
         fraudulent=fraudulent,
+        fraud_context=fraud_context,
     ).to_dict()
 
 

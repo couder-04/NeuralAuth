@@ -17,9 +17,11 @@ Generated Features
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
+
+from generators.fraud import FraudContext, blend
 
 
 # ==========================================================
@@ -61,43 +63,34 @@ class VehicleGenerator:
     def generate(
         self,
         fraudulent: bool = False,
+        fraud_context: Optional[FraudContext] = None,
     ) -> VehicleFeatures:
+
+        ctx = FraudContext.resolve(fraudulent, fraud_context)
 
         # --------------------------------------------
         # Driver Present
         # --------------------------------------------
 
-        if fraudulent:
+        impact_driver = ctx.feature_impact("vehicle", "driver_present")
+        p_driver_absent = blend(0.02, 0.25, impact_driver)
 
-            driver_present = self.rng.choice(
-                [0, 1],
-                p=[0.25, 0.75],
-            )
-
-        else:
-
-            driver_present = self.rng.choice(
-                [0, 1],
-                p=[0.02, 0.98],
-            )
+        driver_present = self.rng.choice(
+            [0, 1],
+            p=[p_driver_absent, 1.0 - p_driver_absent],
+        )
 
         # --------------------------------------------
         # Engine Running
         # --------------------------------------------
 
-        if fraudulent:
+        impact_engine = ctx.feature_impact("vehicle", "engine_running")
+        p_engine_off = blend(0.15, 0.20, impact_engine)
 
-            engine_running = self.rng.choice(
-                [0, 1],
-                p=[0.20, 0.80],
-            )
-
-        else:
-
-            engine_running = self.rng.choice(
-                [0, 1],
-                p=[0.15, 0.85],
-            )
+        engine_running = self.rng.choice(
+            [0, 1],
+            p=[p_engine_off, 1.0 - p_engine_off],
+        )
 
         # --------------------------------------------
         # Vehicle Speed
@@ -109,65 +102,37 @@ class VehicleGenerator:
 
         else:
 
-            if fraudulent:
+            impact_speed = ctx.feature_impact("vehicle", "vehicle_speed")
 
-                vehicle_speed = np.clip(
+            vehicle_speed = np.clip(
 
-                    self.rng.normal(
-                        55,
-                        25,
-                    ),
+                self.rng.normal(
+                    blend(32, 55, impact_speed),
+                    blend(18, 25, impact_speed),
+                ),
 
-                    0,
-                    140,
+                0,
+                blend(120, 140, impact_speed),
 
-                )
-
-            else:
-
-                vehicle_speed = np.clip(
-
-                    self.rng.normal(
-                        32,
-                        18,
-                    ),
-
-                    0,
-                    120,
-
-                )
+            )
 
         # --------------------------------------------
         # Location Familiarity
         # --------------------------------------------
 
-        if fraudulent:
+        impact_loc = ctx.feature_impact("vehicle", "location_familiarity")
 
-            location_familiarity = np.clip(
+        location_familiarity = np.clip(
 
-                self.rng.normal(
-                    0.28,
-                    0.20,
-                ),
+            self.rng.normal(
+                blend(0.88, 0.28, impact_loc),
+                blend(0.10, 0.20, impact_loc),
+            ),
 
-                0,
-                1,
+            0,
+            1,
 
-            )
-
-        else:
-
-            location_familiarity = np.clip(
-
-                self.rng.normal(
-                    0.88,
-                    0.10,
-                ),
-
-                0,
-                1,
-
-            )
+        )
 
         # --------------------------------------------
         # Time Familiarity

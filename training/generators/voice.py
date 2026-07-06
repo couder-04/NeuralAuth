@@ -18,9 +18,11 @@ Speaker Verification + Anti-Spoofing pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
+
+from generators.fraud import FraudContext, blend
 
 
 # ==========================================================
@@ -58,84 +60,58 @@ class VoiceGenerator:
     def generate(
         self,
         fraudulent: bool = False,
+        fraud_context: Optional[FraudContext] = None,
     ) -> VoiceFeatures:
+
+        ctx = FraudContext.resolve(fraudulent, fraud_context)
 
         # --------------------------------------------
         # Audio Quality
+        # Blended between the genuine and fraud
+        # distributions by this scenario's voice
+        # impact (0 = fully genuine, 1 = fully fraud).
         # --------------------------------------------
 
-        if fraudulent:
+        impact_aq = ctx.feature_impact("voice", "audio_quality")
 
-            audio_quality = np.clip(
+        audio_quality = np.clip(
 
-                self.rng.normal(
-                    0.72,
-                    0.15,
-                ),
+            self.rng.normal(
+                blend(0.92, 0.72, impact_aq),
+                blend(0.06, 0.15, impact_aq),
+            ),
 
-                0,
-                1,
+            0,
+            1,
 
-            )
-
-        else:
-
-            audio_quality = np.clip(
-
-                self.rng.normal(
-                    0.92,
-                    0.06,
-                ),
-
-                0,
-                1,
-
-            )
+        )
 
         # --------------------------------------------
         # Liveness
         # --------------------------------------------
 
-        if fraudulent:
+        impact_live = ctx.feature_impact("voice", "liveness_score")
 
-            liveness_score = np.clip(
+        liveness_score = np.clip(
 
-                self.rng.normal(
-                    0.35,
-                    0.18,
-                ),
+            self.rng.normal(
+                blend(0.97, 0.35, impact_live),
+                blend(0.03, 0.18, impact_live),
+            ),
 
-                0,
-                1,
+            0,
+            1,
 
-            )
-
-        else:
-
-            liveness_score = np.clip(
-
-                self.rng.normal(
-                    0.97,
-                    0.03,
-                ),
-
-                0,
-                1,
-
-            )
+        )
 
         # --------------------------------------------
         # Speaker Similarity
         # Depends on audio quality + liveness
         # --------------------------------------------
 
-        if fraudulent:
+        impact_sim = ctx.feature_impact("voice", "speaker_similarity")
 
-            base_similarity = 0.45
-
-        else:
-
-            base_similarity = 0.90
+        base_similarity = blend(0.90, 0.45, impact_sim)
 
         speaker_similarity = np.clip(
 
@@ -209,10 +185,12 @@ _generator = VoiceGenerator()
 
 def generate_voice(
     fraudulent: bool = False,
+    fraud_context: Optional[FraudContext] = None,
 ) -> Dict:
 
     return _generator.generate(
         fraudulent=fraudulent,
+        fraud_context=fraud_context,
     ).to_dict()
 
 
