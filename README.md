@@ -698,29 +698,44 @@ timeline
 </div>
 
 ```mermaid
-%%{init: {'theme':'base'}}%%
-mindmap
-  root(("🧠 NeuralAuth<br/>Tech Stack"))
-    ML/Modeling
-      PyTorch
-      ONNX Runtime
-      Scikit-Learn
-    LLM
-      Transformers
-      HF Pipeline
-    API
-      FastAPI
-      Uvicorn
-      Pydantic v2
-    Data
-      NumPy
-      Pandas
-    Config
-      PyYAML
-    Dashboard
-      NiceGUI
-    Testing
-      pytest
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#fdcb6e','primaryTextColor':'#2d3436','primaryBorderColor':'#e1a83c','lineColor':'#636e72'}}}%%
+flowchart TD
+    Root(("🧠 NeuralAuth<br/>Tech Stack"))
+
+    Root --> ML["🔮 ML / Modeling"]
+    ML --> ML1["PyTorch"]
+    ML --> ML2["ONNX Runtime"]
+    ML --> ML3["Scikit-Learn"]
+
+    Root --> LLM["🤖 LLM"]
+    LLM --> LLM1["Transformers"]
+    LLM --> LLM2["HF Pipeline"]
+
+    Root --> API2["🚀 API"]
+    API2 --> API1["FastAPI"]
+    API2 --> API3["Uvicorn"]
+    API2 --> API4["Pydantic v2"]
+
+    Root --> Data2["📊 Data"]
+    Data2 --> Data1["NumPy"]
+    Data2 --> Data3["Pandas"]
+
+    Root --> Cfg2["⚙️ Config"]
+    Cfg2 --> Cfg1["PyYAML"]
+
+    Root --> Dash2["🖥 Dashboard"]
+    Dash2 --> Dash1["NiceGUI"]
+
+    Root --> Test2["🧪 Testing"]
+    Test2 --> Test1["pytest"]
+
+    classDef root fill:#fdcb6e,stroke:#e1a83c,color:#2d3436,stroke-width:3px
+    classDef branch fill:#6c5ce7,stroke:#341f97,color:#fff,stroke-width:2px
+    classDef leaf fill:#dfe6e9,stroke:#636e72,color:#2d3436,stroke-width:1px
+
+    class Root root
+    class ML,LLM,API2,Data2,Cfg2,Dash2,Test2 branch
+    class ML1,ML2,ML3,LLM1,LLM2,API1,API3,API4,Data1,Data3,Cfg1,Dash1,Test1 leaf
 ```
 
 ---
