@@ -119,21 +119,21 @@ flowchart LR
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#0984e3','primaryTextColor':'#fff','primaryBorderColor':'#2d3436','lineColor':'#636e72'}}}%%
 flowchart TD
-    Client(["💻 Client / Dashboard\n(dashboard.py via app.py)"]) -->|HTTP POST /authenticate\nX-API-Key: optional| API
+    Client(["💻 Client / Dashboard<br/>dashboard.py via app.py"]) -->|"POST /authenticate<br/>X-API-Key: optional"| API
 
     subgraph API["🚀 api/server.py — FastAPI"]
-        Lifespan["🟢 lifespan()\neager-loads every engine\nfails fast on error"]
-        Auth["🔑 require_api_key()\nDepends() — opt-in"]
-        Route["📥 authenticate()\nrequest_id, generic error handling"]
+        Lifespan["🟢 lifespan()<br/>eager-loads every engine<br/>fails fast on error"]
+        Auth["🔑 require_api_key()<br/>Depends() — opt-in"]
+        Route["📥 authenticate()<br/>request_id<br/>generic error handling"]
     end
 
-    Route --> FE["🧩 FeatureExtractor.extract()\n→ FeatureVector (31 fields)"]
-    FE --> Pred["🧠 AuthenticationPredictor\nthread-safe lazy singleton"]
-    Pred --> Net["🕸 AuthenticationNetwork\ntrust / risk / decision / confidence heads"]
+    Route --> FE["🧩 FeatureExtractor.extract()<br/>→ FeatureVector (31 fields)"]
+    FE --> Pred["🧠 AuthenticationPredictor<br/>thread-safe lazy singleton"]
+    Pred --> Net["🕸 AuthenticationNetwork<br/>trust · risk · decision<br/>confidence heads"]
     Net --> AuthResult["📊 AuthenticationResult"]
 
-    Route --> IE["🤖 IntentEngine.parse()\nLLM + schema validation + retries"]
-    IE --> Txn["💬 Transaction\nintent, amount, beneficiary_type"]
+    Route --> IE["🤖 IntentEngine.parse()<br/>LLM + schema validation + retries"]
+    IE --> Txn["💬 Transaction<br/>intent, amount, beneficiary_type"]
 
     AuthResult --> RE["⚠️ RiskEngine.evaluate()"]
     FE --> RE
@@ -145,7 +145,7 @@ flowchart TD
     Txn --> PC
     PC --> PI["📦 PolicyInput"]
     RiskResult --> PI
-    PI --> PE["📜 PolicyEngine.evaluate()\npolicy_rules.yaml"]
+    PI --> PE["📜 PolicyEngine.evaluate()<br/>policy_rules.yaml"]
     PE --> PolicyResult["✅ PolicyResult"]
 
     AuthResult --> DE
@@ -255,7 +255,7 @@ stateDiagram-v2
     StartupFailed --> [*]: process never serves traffic
 
     LifespanEnter --> Warm: ✅ "Startup complete: all engines are warm"
-    Warm --> Serving: server accepts traffic\n(~4.7s startup, ~4ms first request)
+    Warm --> Serving: server accepts traffic (~4.7s startup, ~4ms first request)
     Serving --> ShutdownResume: shutdown triggered
     ShutdownResume --> Done: "Shutdown complete."
     Done --> [*]
@@ -275,7 +275,7 @@ flowchart LR
     FV["🧩 FeatureVector"] --> FA["👁 FeatureAttention"]
     FA --> PL["📐 ProjectionLayer"]
     PL --> RE2["🔁 ResidualEncoder"]
-    RE2 --> EMB(("🌐 Shared\nEmbedding"))
+    RE2 --> EMB(("🌐 Shared<br/>Embedding"))
     EMB --> T["🤝 Trust Head"]
     EMB --> R["⚠️ Risk Head"]
     EMB --> D["🎯 Decision Head"]
@@ -359,19 +359,19 @@ A NiceGUI-based visualization client that talks to the API exclusively over HTTP
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#0984e3','primaryTextColor':'#fff','primaryBorderColor':'#053e6e','lineColor':'#636e72'}}}%%
 flowchart TD
     subgraph Pkg["⚖️ engines/decision/"]
-        DEng["🧭 decision_engine.py\norchestration only"]
-        Cfg["⚙️ config.py\nthresholds, weights"]
-        Fus["🔀 fusion.py\nMajority · Weighted · RiskWeighted (default)\nBayesian · RiskFirst · PolicyFirst"]
-        Expl["💡 explanation.py\ntop_reasons / top_contributors"]
-        Aud["📁 audit.py\ndecision_trace, decision_graph, feature_vector"]
-        Meta2["🏷 metadata.py\nrequest_id / trace_id / versions"]
-        Hist2["🕘 history.py\nInMemoryHistoryStore"]
-        Metr["📉 metrics.py\ndecision counters"]
-        Hooks["🪝 hooks.py\nbefore/after hooks"]
-        Ens["🧬 ensemble.py\ncombine predictions"]
-        Num["🔢 numeric.py\nto_python()"]
-        Ser["📤 serializers.py\nto_json()"]
-        Types["🏗 types.py\nDecisionAction, DecisionResult"]
+        DEng["🧭 decision_engine.py<br/>orchestration only"]
+        Cfg["⚙️ config.py<br/>thresholds, weights"]
+        Fus["🔀 fusion.py<br/>Majority · Weighted<br/>RiskWeighted (default)<br/>Bayesian · RiskFirst<br/>PolicyFirst"]
+        Expl["💡 explanation.py<br/>top_reasons<br/>top_contributors"]
+        Aud["📁 audit.py<br/>decision_trace<br/>decision_graph<br/>feature_vector"]
+        Meta2["🏷 metadata.py<br/>request_id · trace_id<br/>versions"]
+        Hist2["🕘 history.py<br/>InMemoryHistoryStore"]
+        Metr["📉 metrics.py<br/>decision counters"]
+        Hooks["🪝 hooks.py<br/>before/after hooks"]
+        Ens["🧬 ensemble.py<br/>combine predictions"]
+        Num["🔢 numeric.py<br/>to_python()"]
+        Ser["📤 serializers.py<br/>to_json()"]
+        Types["🏗 types.py<br/>DecisionAction<br/>DecisionResult"]
     end
 
     DEng --> Cfg
@@ -532,10 +532,10 @@ flowchart TD
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#e17055','primaryTextColor':'#fff','primaryBorderColor':'#a84832','lineColor':'#636e72'}}}%%
 flowchart LR
-    R["📥 Incoming Request"] --> V["✅ Pydantic Validation\nGPS · speed · timestamp · blank fields"]
-    V --> K["🔑 API-Key Gate\nopt-in via env var"]
+    R["📥 Incoming Request"] --> V["✅ Pydantic Validation<br/>GPS · speed<br/>timestamp · blank fields"]
+    V --> K["🔑 API-Key Gate<br/>opt-in via env var"]
     K --> P["🧠 Pipeline Execution"]
-    P --> E["🙈 Error Sanitization\ngeneric message + request_id"]
+    P --> E["🙈 Error Sanitization<br/>generic message + request_id"]
     E --> Out["📤 Safe Response"]
 
     style R fill:#dfe6e9,stroke:#636e72,color:#2d3436
@@ -700,7 +700,7 @@ timeline
 ```mermaid
 %%{init: {'theme':'base'}}%%
 mindmap
-  root(("🧠 NeuralAuth\nTech Stack"))
+  root(("🧠 NeuralAuth<br/>Tech Stack"))
     ML/Modeling
       PyTorch
       ONNX Runtime
