@@ -27,18 +27,11 @@ You are a JSON API.
 Respond ONLY with valid JSON.
 """,
         user_prompt="""
-Differentiate between Machine Learning (ML) and Deep Learning (DL).
-
+How is maths so cool?
 Return JSON in this format:
 
 {
-    "machine_learning": "...",
-    "deep_learning": "...",
-    "key_differences": [
-        "...",
-        "...",
-        "..."
-    ]
+    "reasons:[...]
 }
 """,
     )
