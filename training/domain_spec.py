@@ -25,6 +25,32 @@ from typing import Dict, List
 # ---------------------------------------------------------------------------
 LABEL_COLUMN_NAMES: List[str] = ["trust_score", "risk_score", "decision", "confidence"]
 
+# ---------------------------------------------------------------------------
+# Canonical decision values -- the ONE source of truth for what a valid
+# `decision` value is. `decision_plausibility.py` imports `DECISION_VALUES`
+# from here instead of redefining it, and `validator.py`/`config.py` use
+# `ALLOWED_DECISIONS` as the default `allowed_decisions` set so the
+# {0,1,2,3} hard constraint declared below is actually enforced rather than
+# only being prompt text.
+# ---------------------------------------------------------------------------
+DECISION_VALUES: Dict[str, int] = {
+    "ALLOW": 0,
+    "VOICE_CHALLENGE": 1,
+    "VOICE_AND_OTP": 2,
+    "REJECT": 3,
+}
+ALLOWED_DECISIONS: List[int] = sorted(DECISION_VALUES.values())
+
+# Score-type label bounds. Kept as a real (min, max) mapping here -- not just
+# prose in HARD_CONSTRAINTS -- so validator.py can enforce the PER-FIELD
+# bound (e.g. confidence's 0.5 floor) instead of only the generic
+# Config.score_min/score_max (0.0-1.0) that applies to every score column.
+LABEL_SCORE_BOUNDS: Dict[str, tuple] = {
+    "trust_score": (0.0, 1.0),
+    "risk_score": (0.0, 1.0),
+    "confidence": (0.5, 1.0),
+}
+
 HARD_CONSTRAINTS: Dict[str, str] = {
     "trust_score": "[0.0, 1.0]",
     "risk_score": "[0.0, 1.0]",

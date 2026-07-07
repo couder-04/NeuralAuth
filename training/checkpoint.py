@@ -51,12 +51,20 @@ class CheckpointManager:
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.path = self.checkpoint_dir / CHECKPOINT_FILENAME
         self.input_csv_path = input_csv_path
+        # Cache for the input file's checksum. Callers that already computed
+        # it once (e.g. verify_labels.py, which also needs it for the
+        # resume-staleness check) should set this directly to avoid
+        # re-hashing the whole input CSV on every save(). If left unset,
+        # save() computes and caches it lazily on first use.
+        self.input_checksum: Optional[str] = None
 
     # ------------------------------------------------------------------
     def save(self, state: CheckpointState) -> None:
         state.timestamp = time.strftime("%Y-%m-%dT%H:%M:%S")
         if self.input_csv_path:
-            state.input_checksum = checksum_of_file(self.input_csv_path)
+            if self.input_checksum is None:
+                self.input_checksum = checksum_of_file(self.input_csv_path)
+            state.input_checksum = self.input_checksum
         tmp_path = self.path.with_suffix(".tmp")
         tmp_path.write_text(json.dumps(state.to_dict(), indent=2, default=str))
         tmp_path.replace(self.path)  # atomic-ish write

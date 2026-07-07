@@ -1,8 +1,11 @@
 """
 llm_client.py
 =============
-Single interface to the LLM provider (DeepSeek by default; also supports
-OpenAI, Gemini, Qwen, and Claude via configuration).
+Single interface to the LLM provider. Supports openrouter (default),
+openai, deepseek, qwen (all OpenAI-compatible chat-completions), plus
+claude and gemini (bespoke request/response shapes). The exact provider
+set here must match `config.PROVIDER_DEFAULTS`'s keys and
+`verify_labels.py --provider`'s CLI `choices=`.
 
 Public surface:
     LLMClient.complete(system_prompt, user_prompt) -> LLMResponse
@@ -208,6 +211,12 @@ class LLMClient:
         )
 
     # ------------------------------------------------------------------
+    # Providers that speak the same OpenAI-compatible chat-completions wire
+    # format and can all share `_call_openai_compatible`. Kept as one place
+    # so this list, `PROVIDER_DEFAULTS` (config.py), and the CLI `choices=`
+    # (verify_labels.py) can be visibly checked against each other.
+    _OPENAI_COMPATIBLE_PROVIDERS = ("openrouter", "openai", "deepseek", "qwen")
+
     def _dispatch(self, system_prompt: str, user_prompt: str) -> dict:
         """Route to the correct provider-specific HTTP call. Returns dict with content/usage."""
         if not self.api_key:
@@ -216,7 +225,7 @@ class LLMClient:
                 "Configure it or use dry_run mode."
             )
 
-        if self.provider in ("openrouter"):
+        if self.provider in self._OPENAI_COMPATIBLE_PROVIDERS:
             return self._call_openai_compatible(system_prompt, user_prompt)
         elif self.provider == "claude":
             return self._call_anthropic(system_prompt, user_prompt)

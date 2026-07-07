@@ -42,9 +42,16 @@ class Batcher:
         self.resume_from_batch = resume_from_batch or 0
         self.max_batches = max_batches
 
-        work_df = df.copy()
+        # `.sample()` (shuffle path) already returns a new, independent
+        # dataframe. When not shuffling, Batcher only ever reads from
+        # `work_df` (via `.iloc` slicing in __iter__ / `.index`/`.columns`
+        # in Batch.row_ids) and never mutates it, so referencing `df`
+        # directly avoids a full, unnecessary copy of the dataset on every
+        # run for the (default) shuffle=False case.
         if shuffle:
-            work_df = work_df.sample(frac=1.0, random_state=random_seed)
+            work_df = df.sample(frac=1.0, random_state=random_seed)
+        else:
+            work_df = df
 
         self._df = work_df
         self._total_batches = max(1, -(-len(work_df) // batch_size))  # ceil div

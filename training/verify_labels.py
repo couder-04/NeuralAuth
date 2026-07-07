@@ -38,7 +38,8 @@ from schema import infer_schema
 from batcher import Batcher
 from prompts import build_batch_prompt_bundle, build_repair_prompt_bundle
 from llm_client import build_llm_client, LLMError
-from validator import validate_response
+from validator import validate_response, check_decision_plausibility
+import decision_plausibility as dp
 from checkpoint import CheckpointManager, CheckpointState
 from merger import apply_corrections, write_outputs
 from utils import setup_logger, print_progress, safe_json_loads, checksum_of_file
@@ -74,6 +75,7 @@ def build_config_from_args(args: argparse.Namespace) -> Config:
         "cost_limit_usd": args.cost_limit_usd,
         "resume_enabled": (not args.no_resume) if args.no_resume else None,
         "dry_run": args.dry_run or None,
+        "clear_checkpoint": args.clear_checkpoint or None,
     }
     return Config.load(config_path=args.config, **overrides)
 
@@ -91,23 +93,55 @@ def run(config: Config) -> dict:
     logger.info(f"Loaded {len(df)} rows, {len(df.columns)} columns from {input_path}")
 
     # ---- Infer schema -----------------------------------------------------
-    schema = infer_schema(df)
+    # Explicit Config overrides (id_column/decision_column/label_columns)
+    # take precedence over the name-based heuristic when supplied -- see
+    # schema.infer_schema()'s docstring.
+    schema = infer_schema(
+        df,
+        id_column=config.id_column,
+        decision_column=config.decision_column,
+        label_columns=config.label_columns,
+    )
     logger.info(
         f"Inferred schema: id={schema.id_column}, decision={schema.decision_column}, "
         f"scores={schema.score_columns}, labels={schema.label_columns}"
     )
 
+    # ---- Build decision-plausibility context (once, over the full dataset) ---
+    # See decision_plausibility.py: `decision` is a stochastic sample, not a
+    # deterministic function of the other columns, so this is used only to
+    # flag statistically implausible rows for escalation -- never to block
+    # or fail the structural validation above.
+    plausibility_ctx = None
+    if schema.decision_column is not None:
+        try:
+            plausibility_ctx = dp.build_context(df, id_column=schema.id_column)
+            logger.info(
+                "Decision plausibility context built: reconstructed dist=%s",
+                plausibility_ctx.diagnostics.get("reconstructed_mean_distribution"),
+            )
+        except ValueError as exc:
+            logger.warning(f"Skipping decision-plausibility checks: {exc}")
+
     # ---- Resume checkpoint --------------------------------------------
     checkpoint_mgr = CheckpointManager(config.checkpoint_dir, input_csv_path=str(input_path))
-    if config.__dict__.get("clear_checkpoint"):
+    if config.clear_checkpoint:
         checkpoint_mgr.clear()
 
+    # Computed once and reused for both the resume-staleness check and every
+    # checkpoint save below, instead of re-hashing the whole input CSV file
+    # on every single save() call.
     input_checksum = checksum_of_file(str(input_path))
+    checkpoint_mgr.input_checksum = input_checksum
     if config.resume_enabled:
         state = checkpoint_mgr.resume(expect_input_checksum=input_checksum)
     else:
         state = CheckpointState()
     resume_from = state.last_completed_batch + 1
+    if config.resume_from_batch is not None:
+        # Explicit override: only allowed to skip forward, never to replay
+        # batches the checkpoint already completed.
+        resume_from = max(resume_from, config.resume_from_batch)
     if resume_from > 0:
         logger.info(f"Resuming from batch {resume_from} ({state.rows_completed} rows already done)")
 
@@ -122,7 +156,7 @@ def run(config: Config) -> dict:
     # ---- LLM client -----------------------------------------------------
     llm_client = build_llm_client(config, logger=logger)
 
-    all_llm_results = list(state.corrections and _results_from_state(state) or [])
+    all_llm_results = list(state.corrections or [])
     start_time = time.perf_counter()
     stopped_reason = None
      
@@ -204,6 +238,41 @@ def run(config: Config) -> dict:
     merge_result = apply_corrections(df, schema, all_llm_results)
     output_paths = write_outputs(merge_result, config.output_dir)
 
+    # ---- Decision plausibility escalations (non-blocking) -----------------
+    # Runs against the FINAL (post-correction) decisions so a correction that
+    # itself lands on an implausible decision also gets flagged.
+    escalation_summary = {"checked": 0, "borderline": 0, "implausible": 0}
+    if plausibility_ctx is not None:
+        verified_df = merge_result.verified_df
+        row_ids = (
+            verified_df[schema.id_column].tolist()
+            if schema.id_column and schema.id_column in verified_df.columns
+            else verified_df.index.tolist()
+        )
+        report_p = check_decision_plausibility(
+            df_full=df,
+            row_ids=row_ids,
+            decisions=verified_df[schema.decision_column].tolist(),
+            schema=schema,
+            ctx=plausibility_ctx,
+        )
+        escalation_summary["checked"] = report_p.checked
+        escalation_summary["borderline"] = sum(
+            1 for e in report_p.escalations if e["band"] == "borderline"
+        )
+        escalation_summary["implausible"] = sum(
+            1 for e in report_p.escalations if e["band"] == "implausible"
+        )
+        if report_p.escalations:
+            esc_path = Path(config.output_dir) / "escalations.csv"
+            pd.DataFrame(report_p.escalations).to_csv(esc_path, index=False)
+            output_paths["escalations"] = str(esc_path)
+            logger.info(
+                f"Wrote {len(report_p.escalations)} decision-plausibility "
+                f"escalations ({escalation_summary['borderline']} borderline, "
+                f"{escalation_summary['implausible']} implausible) to {esc_path}"
+            )
+
     # ---- Report -------------------------------------------------------
     runtime_s = time.perf_counter() - start_time
     report = {
@@ -211,6 +280,7 @@ def run(config: Config) -> dict:
         "rows_verified": len(set(state.verified_row_ids)),
         "rows_corrected": merge_result.rows_corrected,
         "fields_corrected": merge_result.fields_corrected,
+        "fields_attempted": merge_result.fields_attempted,
         "runtime_s": round(runtime_s, 2),
         "api_calls": state.total_api_calls,
         "input_tokens": state.total_input_tokens,
@@ -220,6 +290,7 @@ def run(config: Config) -> dict:
         "model": config.model,
         "stopped_reason": stopped_reason,
         "outputs": output_paths,
+        "decision_plausibility": escalation_summary,
     }
     report_path = Path(config.output_dir) / "verification_report.json"
     report_path.write_text(json.dumps(report, indent=2, default=str))
@@ -239,15 +310,9 @@ def run(config: Config) -> dict:
     return report
 
 
-def _results_from_state(state: CheckpointState):
-    return state.corrections
-
-
 def main():
     args = parse_args()
     config = build_config_from_args(args)
-    if args.clear_checkpoint:
-        config.__dict__["clear_checkpoint"] = True
     try:
         report = run(config)
     except Exception as exc:

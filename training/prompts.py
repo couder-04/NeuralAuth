@@ -156,6 +156,11 @@ def build_batch_prompt(rows: "pd.DataFrame", schema: DatasetSchema) -> str:
 
 # ---------------------------------------------------------------------------
 # Single-row prompt (used for repairs isolated to one row, or small batches)
+# NOTE: not currently called by verify_labels.py (which only ever repairs a
+# whole failed batch via build_repair_prompt_bundle) -- kept as public API
+# for callers that want a per-row repair/verification path instead of a
+# batch-level one. Not removed as dead code because it's part of this
+# module's documented public surface (see prompts.py module docstring).
 # ---------------------------------------------------------------------------
 def build_single_row_prompt(row: "pd.Series", schema: DatasetSchema, row_index) -> str:
     available = schema.column_names()
