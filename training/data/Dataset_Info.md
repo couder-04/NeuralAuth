@@ -6,7 +6,7 @@
 - Rows: 100,000
 - Columns: 36
 - Memory Usage: 27.47 MB
-- Dataset Fingerprint (MD5): `224a57c63de4b1e1d9efdd76b6e7a9a1`
+- Dataset Fingerprint (MD5): `aa3fa32a75533819cac80ce2958c750b`
 
 
 ### Columns per Family
@@ -52,71 +52,71 @@ No missing values anywhere in the dataset. ✓
 ### Identity
 
 ```
-                      mean    median  mode       std     variance      cv   min     max   range  unique
-account_age_days  667.4055  542.6841  30.0  500.8141  250814.7564  0.7504  30.0  5000.0  4970.0  100000
+                      mean  median  mode      std     variance      cv  min   max  range  unique
+account_age_days  667.3341   543.0   354  500.757  250757.5437  0.7504   30  5000   4970    2931
 ```
 
 ### Voice Biometrics
 
 ```
                       mean  median  mode     std  variance      cv     min     max   range  unique
-speaker_similarity  0.9831  0.9852   1.0  0.0107    0.0001  0.0109  0.9310  1.0000  0.0690   99938
-liveness_score      0.9676  0.9702   1.0  0.0259    0.0007  0.0268  0.8361  1.0000  0.1639   91923
-audio_quality       0.9146  0.9192   1.0  0.0606    0.0037  0.0662  0.4727  1.0000  0.5273   95495
-spoof_probability   0.0293  0.0284   0.0  0.0193    0.0004  0.6586  0.0000  0.0948  0.0948    2736
+speaker_similarity  0.9959  1.0000   1.0  0.0241    0.0006  0.0242  0.6900  1.0000  0.3100   54660
+liveness_score      0.9573  0.9682   1.0  0.0646    0.0042  0.0674  0.1318  1.0000  0.8682   92185
+audio_quality       0.9114  0.9172   1.0  0.0645    0.0042  0.0708  0.3075  1.0000  0.6925   95472
+spoof_probability   0.0341  0.0300   0.0  0.0348    0.0012  1.0207  0.0000  0.4006  0.4006    4539
 ```
 
 ### Behavior
 
 ```
                             mean  median    mode     std  variance      cv     min     max   range  unique
-speech_rate_similarity    0.7381  0.7391  0.4731  0.0584    0.0034  0.0792  0.4731  0.9613  0.4882  100000
-pronunciation_similarity  0.8904  0.8905  1.0000  0.0348    0.0012  0.0391  0.7441  1.0000  0.2559   99962
-command_familiarity       0.8756  0.8784  1.0000  0.0764    0.0058  0.0872  0.5364  1.0000  0.4636   96801
-stress_score              0.2234  0.2224  0.0000  0.1018    0.0104  0.4558  0.0000  0.8403  0.8403   99346
-hesitation_score          0.2780  0.2774  0.0000  0.0990    0.0098  0.3559  0.0000  0.7160  0.7160   99965
+speech_rate_similarity    0.7308  0.7360  0.0567  0.0718    0.0052  0.0983  0.0567  0.9605  0.9038  100000
+pronunciation_similarity  0.8845  0.8884  1.0000  0.0473    0.0022  0.0535  0.4551  1.0000  0.5449   99966
+command_familiarity       0.8680  0.8748  1.0000  0.0897    0.0080  0.1033  0.0000  1.0000  1.0000   96870
+stress_score              0.2316  0.2272  0.0000  0.1110    0.0123  0.4790  0.0000  0.9993  0.9993   99331
+hesitation_score          0.2833  0.2812  0.0000  0.1037    0.0108  0.3660  0.0000  0.7799  0.7799   99944
 ```
 
 ### Vehicle Context
 
 ```
-                         mean   median  mode      std  variance      cv     min     max     range  unique
-vehicle_speed         27.8406  28.3600   0.0  19.8907  395.6389  0.7144  0.0000  113.82  113.8200   48885
-location_familiarity   0.8708   0.8751   1.0   0.0844    0.0071  0.0969  0.3426    1.00    0.6574   96278
-time_familiarity       0.8187   0.8202   1.0   0.1007    0.0101  0.1231  0.4640    1.00    0.5360   98362
+                         mean   median  mode      std  variance      cv     min       max     range  unique
+vehicle_speed         27.9381  28.4661   0.0  19.9791  399.1630  0.7151  0.0000  112.3113  112.3113   48937
+location_familiarity   0.8657   0.8710   1.0   0.0890    0.0079  0.1028  0.2958    1.0000    0.7042   96406
+time_familiarity       0.8146   0.8173   1.0   0.1033    0.0107  0.1268  0.3705    1.0000    0.6295   98505
 ```
 
 ### Historical Profile
 
 ```
-                              mean     median  mode       std     variance      cv      min       max      range  unique
-previous_trust_score        0.7308     0.7334   1.0    0.1438       0.0207  0.1967   0.1493     1.000     0.8507   98823
-successful_transactions  1807.8760  1798.0000  20.0  867.0637  751799.3780  0.4796  20.0000  4603.002  4583.0020   14279
+                              mean     median  mode       std     variance      cv      min     max      range  unique
+previous_trust_score        0.7289     0.7323   1.0    0.1435       0.0206  0.1969   0.1699     1.0     0.8301   98867
+successful_transactions  1802.1754  1793.0000  20.0  865.5752  749220.3534  0.4803  19.0000  4600.0  4581.0000    4180
 ```
 
 ### Transaction
 
 ```
-                             mean     median    mode         std      variance      cv     min          max       range  unique
-transaction_amount     15100.5349  6871.0150  0.0000  17225.3157  2.967115e+08  1.1407  0.0000  101062.0800  101062.080   69199
-beneficiary_frequency      0.7045     0.7478  0.0000      0.2182  4.760000e-02  0.3098  0.0000       1.0000       1.000  100000
-transaction_risk           0.0974     0.0878  0.0093      0.0517  2.700000e-03  0.5312  0.0093       0.4132       0.404  100000
+                             mean     median    mode         std      variance      cv     min          max        range  unique
+transaction_amount     15692.5079  6899.0850  0.0000  18519.0763  3.429562e+08  1.1801  0.0000  224730.0800  224730.0800   69442
+beneficiary_frequency      0.7047     0.7493  0.0000      0.2187  4.780000e-02  0.3104  0.0000       1.0000       1.0000  100000
+transaction_risk           0.1558     0.1376  0.0139      0.0830  6.900000e-03  0.5329  0.0139       0.6285       0.6146  100000
 ```
 
 ### Intent
 
 ```
-                mean  median  mode     std  variance      cv     min  max   range  unique
-llm_confidence  0.96  0.9601   1.0  0.0217    0.0005  0.0226  0.8943  1.0  0.1057   98926
+                  mean  median  mode    std  variance      cv     min  max   range  unique
+llm_confidence  0.9594  0.9597   1.0  0.022    0.0005  0.0229  0.8845  1.0  0.1155   99032
 ```
 
 ### Unexpected / Non-Schema
 
 ```
                mean  median    mode     std  variance      cv     min     max   range  unique
-trust_score  0.8625  0.8656  0.8674  0.0108    0.0001  0.0125  0.7670  0.8775  0.1105     811
-risk_score   0.4251  0.3071  0.2827  0.2562    0.0656  0.6025  0.0273  0.9987  0.9714    9560
-confidence   0.7627  0.8197  0.5334  0.1675    0.0281  0.2196  0.5180  0.9923  0.4743    4731
+trust_score  0.8621  0.8659  0.8684  0.0133    0.0002  0.0154  0.6035  0.8773  0.2738    1149
+risk_score   0.4187  0.3145  0.2653  0.2447    0.0599  0.5844  0.0281  0.9997  0.9716    9558
+confidence   0.7609  0.8099  0.5316  0.1648    0.0272  0.2166  0.5185  0.9919  0.4734    4731
 ```
 
 ## Distribution Analysis (Continuous Features)
@@ -126,70 +126,70 @@ confidence   0.7627  0.8197  0.5334  0.1675    0.0281  0.2196  0.5180  0.9923  0
 
 ```
                   skewness  kurtosis
-account_age_days    1.5525     3.578
+account_age_days    1.5523    3.5766
 ```
 
 ### Voice Biometrics
 
 ```
                     skewness  kurtosis
-speaker_similarity   -0.8379    0.3200
-liveness_score       -0.5944   -0.2133
-audio_quality        -0.9271    2.2025
-spoof_probability     0.2715   -0.6897
+speaker_similarity   -8.3163   75.8214
+liveness_score       -5.4939   39.1155
+audio_quality        -1.1189    2.9223
+spoof_probability     4.9699   38.6346
 ```
 
 ### Behavior
 
 ```
                           skewness  kurtosis
-speech_rate_similarity     -0.1091   -0.0903
-pronunciation_similarity   -0.0225   -0.0504
-command_familiarity        -0.3211   -0.3114
-stress_score                0.2112    0.2037
-hesitation_score            0.0622   -0.1469
+speech_rate_similarity     -1.4334    6.2078
+pronunciation_similarity   -2.0546    9.6799
+command_familiarity        -1.2606    4.6836
+stress_score                0.5764    1.3891
+hesitation_score            0.2146    0.1852
 ```
 
 ### Vehicle Context
 
 ```
                       skewness  kurtosis
-vehicle_speed           0.2136   -0.7177
-location_familiarity   -0.3056   -0.5587
-time_familiarity       -0.1302   -0.6768
+vehicle_speed           0.2139   -0.7035
+location_familiarity   -0.4143   -0.2154
+time_familiarity       -0.1696   -0.6025
 ```
 
 ### Historical Profile
 
 ```
                          skewness  kurtosis
-previous_trust_score      -0.1285   -0.6704
-successful_transactions    0.1020   -0.3571
+previous_trust_score      -0.1332   -0.6536
+successful_transactions    0.1028   -0.3514
 ```
 
 ### Transaction
 
 ```
                        skewness  kurtosis
-transaction_amount       1.0503    0.1914
-beneficiary_frequency   -0.7070   -0.2972
-transaction_risk         0.9609    0.7586
+transaction_amount       1.4045    2.8008
+beneficiary_frequency   -0.7099   -0.3001
+transaction_risk         1.6226    2.6207
 ```
 
 ### Intent
 
 ```
                 skewness  kurtosis
-llm_confidence   -0.0345   -0.8723
+llm_confidence   -0.0866   -0.7761
 ```
 
 ### Unexpected / Non-Schema
 
 ```
              skewness  kurtosis
-trust_score   -2.0506    5.3079
-risk_score     0.6445   -0.9577
-confidence    -0.2904   -1.4895
+trust_score   -4.1767   34.9141
+risk_score     0.6525   -0.8388
+confidence    -0.2383   -1.4979
 ```
 
 ## Percentiles (Continuous Features)
@@ -198,71 +198,71 @@ confidence    -0.2904   -1.4895
 ### Identity
 
 ```
-                       p1        p5       p10       p25       p50       p75        p90        p95        p99
-account_age_days  57.5661  112.1434  164.1077  299.2269  542.6841  902.7587  1335.2122  1645.9677  2354.2578
+                    p1     p5    p10    p25    p50    p75     p90      p95      p99
+account_age_days  58.0  112.0  164.0  299.0  543.0  903.0  1335.0  1646.05  2352.01
 ```
 
 ### Voice Biometrics
 
 ```
                         p1      p5     p10     p25     p50     p75     p90     p95     p99
-speaker_similarity  0.9537  0.9625  0.9679  0.9765  0.9852  0.9916  0.9953  0.9967  0.9982
-liveness_score      0.9004  0.9208  0.9316  0.9500  0.9702  0.9903  0.9999  1.0000  1.0000
-audio_quality       0.7381  0.8146  0.8392  0.8776  0.9192  0.9598  0.9961  0.9999  1.0000
-spoof_probability   0.0000  0.0000  0.0020  0.0139  0.0284  0.0433  0.0559  0.0625  0.0733
+speaker_similarity  0.8497  0.9875  0.9991  0.9997  1.0000  1.0000  1.0000  1.0000  1.0000
+liveness_score      0.6064  0.9056  0.9248  0.9466  0.9682  0.9890  0.9997  1.0000  1.0000
+audio_quality       0.6970  0.8051  0.8335  0.8746  0.9172  0.9584  0.9959  0.9999  1.0000
+spoof_probability   0.0000  0.0000  0.0028  0.0148  0.0300  0.0458  0.0604  0.0697  0.2055
 ```
 
 ### Behavior
 
 ```
                               p1      p5     p10     p25     p50     p75     p90     p95     p99
-speech_rate_similarity    0.5993  0.6403  0.6624  0.6986  0.7391  0.7787  0.8130  0.8321  0.8669
-pronunciation_similarity  0.8096  0.8329  0.8457  0.8669  0.8905  0.9140  0.9351  0.9474  0.9711
-command_familiarity       0.6880  0.7439  0.7737  0.8238  0.8784  0.9327  0.9805  0.9992  1.0000
-stress_score              0.0010  0.0555  0.0921  0.1539  0.2224  0.2901  0.3529  0.3923  0.4721
-hesitation_score          0.0542  0.1168  0.1498  0.2097  0.2774  0.3456  0.4060  0.4404  0.5094
+speech_rate_similarity    0.4747  0.6218  0.6517  0.6935  0.7360  0.7770  0.8111  0.8310  0.8672
+pronunciation_similarity  0.6853  0.8200  0.8387  0.8635  0.8884  0.9125  0.9340  0.9465  0.9705
+command_familiarity       0.5847  0.7234  0.7623  0.8171  0.8748  0.9310  0.9797  0.9989  1.0000
+stress_score              0.0011  0.0577  0.0946  0.1570  0.2272  0.2984  0.3673  0.4153  0.5448
+hesitation_score          0.0563  0.1181  0.1518  0.2113  0.2812  0.3514  0.4160  0.4558  0.5402
 ```
 
 ### Vehicle Context
 
 ```
                           p1      p5     p10      p25      p50      p75      p90      p95      p99
-vehicle_speed         0.0000  0.0771  0.2631  10.9100  28.3600  42.2936  54.0700  60.9299  73.6801
-location_familiarity  0.6828  0.7240  0.7541   0.8100   0.8751   0.9387   0.9861   0.9995   1.0000
-time_familiarity      0.6009  0.6483  0.6819   0.7456   0.8202   0.8947   0.9569   0.9847   1.0000
+vehicle_speed         0.0000  0.0753  0.2585  10.8100  28.4661  42.3549  54.1400  61.1207  73.8114
+location_familiarity  0.6561  0.7103  0.7439   0.8038   0.8710   0.9364   0.9853   0.9993   1.0000
+time_familiarity      0.5844  0.6386  0.6746   0.7405   0.8173   0.8923   0.9549   0.9839   1.0000
 ```
 
 ### Historical Profile
 
 ```
-                              p1        p5       p10       p25        p50        p75        p90        p95     p99
-previous_trust_score      0.4173    0.4890    0.5351     0.626     0.7334     0.8406     0.9244     0.9638     1.0
-successful_transactions  20.0000  348.9916  665.0000  1201.000  1798.0000  2402.7715  2945.0000  3272.0712  3839.0
+                              p1        p5       p10        p25        p50        p75        p90        p95      p99
+previous_trust_score      0.4147    0.4875    0.5333     0.6241     0.7323     0.8372     0.9218     0.9611     1.00
+successful_transactions  20.0000  347.0000  660.0000  1196.0000  1793.0000  2392.0000  2937.0000  3266.0000  3823.01
 ```
 
 ### Transaction
 
 ```
                            p1      p5     p10       p25        p50         p75         p90         p95         p99
-transaction_amount     0.0000  0.0000  0.0000  100.0000  6871.0150  27097.6275  41534.2530  49066.9565  62776.4346
-beneficiary_frequency  0.1423  0.2838  0.3807    0.5603     0.7478      0.8859      0.9567      0.9789      0.9958
-transaction_risk       0.0213  0.0309  0.0396    0.0587     0.0878      0.1243      0.1721      0.2012      0.2480
+transaction_amount     0.0000  0.0000  0.0000  100.0000  6899.0850  27744.8525  42727.2590  50967.8615  68790.5451
+beneficiary_frequency  0.1404  0.2828  0.3784    0.5600     0.7493      0.8870      0.9568      0.9786      0.9958
+transaction_risk       0.0449  0.0636  0.0765    0.1025     0.1376      0.1776      0.2638      0.3648      0.4238
 ```
 
 ### Intent
 
 ```
-                   p1      p5     p10     p25     p50     p75   p90     p95  p99
-llm_confidence  0.917  0.9245  0.9303  0.9432  0.9601  0.9768  0.99  0.9956  1.0
+                    p1      p5     p10     p25     p50     p75     p90     p95  p99
+llm_confidence  0.9147  0.9234  0.9294  0.9427  0.9597  0.9766  0.9895  0.9952  1.0
 ```
 
 ### Unexpected / Non-Schema
 
 ```
                  p1      p5     p10     p25     p50     p75     p90     p95     p99
-trust_score  0.8229  0.8390  0.8475  0.8601  0.8656  0.8691  0.8715  0.8730  0.8754
-risk_score   0.0609  0.1086  0.1584  0.2413  0.3071  0.6711  0.8263  0.8925  0.9631
-confidence   0.5220  0.5266  0.5307  0.5558  0.8197  0.9032  0.9694  0.9816  0.9886
+trust_score  0.8135  0.8376  0.8470  0.8603  0.8659  0.8694  0.8716  0.8731  0.8752
+risk_score   0.0646  0.1131  0.1623  0.2393  0.3145  0.6365  0.7996  0.8746  0.9587
+confidence   0.5230  0.5281  0.5331  0.5662  0.8099  0.9027  0.9672  0.9804  0.9881
 ```
 
 ## Feature Range Validation
@@ -343,30 +343,30 @@ llm_confidence  [0.0, 1.0]   PASS        0
 ### Identity
 
 ```
-                                          Distribution
-Feature                                               
-kyc_verified      1.0=98,010 (98.0%); 0.0=1,990 (2.0%)
-phone_verified    1.0=98,277 (98.3%); 0.0=1,723 (1.7%)
-email_verified    1.0=96,291 (96.3%); 0.0=3,709 (3.7%)
-voice_enrolled  1.0=78,159 (78.2%); 0.0=21,841 (21.8%)
+                                      Distribution
+Feature                                           
+kyc_verified      1=97,905 (97.9%); 0=2,095 (2.1%)
+phone_verified    1=98,260 (98.3%); 0=1,740 (1.7%)
+email_verified    1=96,283 (96.3%); 0=3,717 (3.7%)
+voice_enrolled  1=78,000 (78.0%); 0=22,000 (22.0%)
 ```
 
 ### Vehicle Context
 
 ```
-                                             Distribution
-Feature                                                  
-engine_running     1.0=84,991 (85.0%); 0.0=15,009 (15.0%)
-driver_present       1.0=97,424 (97.4%); 0.0=2,576 (2.6%)
-seatbelt_fastened    1.0=93,271 (93.3%); 0.0=6,729 (6.7%)
+                                         Distribution
+Feature                                              
+engine_running     1=84,906 (84.9%); 0=15,094 (15.1%)
+driver_present       1=97,300 (97.3%); 0=2,700 (2.7%)
+seatbelt_fastened    1=92,822 (92.8%); 0=7,178 (7.2%)
 ```
 
 ### Historical Profile
 
 ```
-                                       Distribution
-Feature                                            
-fraud_history  0.0=97,694 (97.7%); 1.0=2,306 (2.3%)
+                                   Distribution
+Feature                                        
+fraud_history  0=97,569 (97.6%); 1=2,431 (2.4%)
 ```
 
 ### Transaction
@@ -374,7 +374,7 @@ fraud_history  0.0=97,694 (97.7%); 1.0=2,306 (2.3%)
 ```
                                         Distribution
 Feature                                             
-beneficiary_type  0=88,561 (88.6%); 1=11,439 (11.4%)
+beneficiary_type  0=88,266 (88.3%); 1=11,734 (11.7%)
 ```
 
 ## Categorical Feature Analysis
@@ -385,7 +385,7 @@ beneficiary_type  0=88,561 (88.6%); 1=11,439 (11.4%)
 ```
                  Categories  Top Category  Top Share %  Entropy (bits)  Normalized Entropy
 Feature                                                                                   
-failed_attempts           6           0.0        54.71           1.477               0.572
+failed_attempts           7             0        54.65           1.486               0.529
 ```
 
 ### Transaction
@@ -393,7 +393,7 @@ failed_attempts           6           0.0        54.71           1.477          
 ```
                       Categories  Top Category  Top Share %  Entropy (bits)  Normalized Entropy
 Feature                                                                                        
-transaction_category           4             1        55.28           1.677               0.838
+transaction_category           4             1        55.25           1.677               0.838
 ```
 
 ### Intent
@@ -401,7 +401,7 @@ transaction_category           4             1        55.28           1.677     
 ```
              Categories  Top Category  Top Share %  Entropy (bits)  Normalized Entropy
 Feature                                                                               
-intent_type           4             1        55.28           1.677               0.838
+intent_type           4             1        55.25           1.677               0.838
 ```
 
 ### Unexpected / Non-Schema
@@ -409,38 +409,39 @@ intent_type           4             1        55.28           1.677              
 ```
           Categories  Top Category  Top Share %  Entropy (bits)  Normalized Entropy
 Feature                                                                            
-decision           4             0        61.52           1.514               0.757
+decision           4             0        61.41           1.518               0.759
 ```
 
 ### failed_attempts -- Top Categories
 
-- 0.0: 54,712 (54.71%)
-- 1.0: 32,986 (32.99%)
-- 2.0: 9,952 (9.95%)
-- 3.0: 2,025 (2.02%)
-- 4.0: 292 (0.29%)
-- 5.0: 33 (0.03%)
+- 0: 54,649 (54.65%)
+- 1: 32,916 (32.92%)
+- 2: 9,945 (9.95%)
+- 3: 2,095 (2.10%)
+- 4: 343 (0.34%)
+- 5: 51 (0.05%)
+- 6: 1 (0.00%)
 
 ### transaction_category -- Top Categories
 
-- 1: 55,285 (55.28%)
-- 2: 19,863 (19.86%)
-- 3: 14,882 (14.88%)
-- 0: 9,970 (9.97%)
+- 1: 55,246 (55.25%)
+- 2: 19,925 (19.93%)
+- 3: 14,877 (14.88%)
+- 0: 9,952 (9.95%)
 
 ### intent_type -- Top Categories
 
-- 1: 55,285 (55.28%)
-- 2: 19,863 (19.86%)
-- 3: 14,882 (14.88%)
-- 0: 9,970 (9.97%)
+- 1: 55,246 (55.25%)
+- 2: 19,925 (19.93%)
+- 3: 14,877 (14.88%)
+- 0: 9,952 (9.95%)
 
 ### decision -- Top Categories
 
-- 0: 61,521 (61.52%)
-- 1: 20,136 (20.14%)
-- 2: 12,187 (12.19%)
-- 3: 6,156 (6.16%)
+- 0: 61,411 (61.41%)
+- 1: 19,864 (19.86%)
+- 2: 12,611 (12.61%)
+- 3: 6,114 (6.11%)
 
 ## Cardinality
 
@@ -456,7 +457,7 @@ user_id         100000   id
 
 ```
                   Unique Values        Type
-account_age_days         100000  continuous
+account_age_days           2931  continuous
 kyc_verified                  2      binary
 phone_verified                2      binary
 email_verified                2      binary
@@ -467,10 +468,10 @@ voice_enrolled                2      binary
 
 ```
                     Unique Values        Type
-speaker_similarity          99938  continuous
-liveness_score              91923  continuous
-audio_quality               95495  continuous
-spoof_probability            2736  continuous
+speaker_similarity          54660  continuous
+liveness_score              92185  continuous
+audio_quality               95472  continuous
+spoof_probability            4539  continuous
 ```
 
 ### Behavior
@@ -478,20 +479,20 @@ spoof_probability            2736  continuous
 ```
                           Unique Values        Type
 speech_rate_similarity           100000  continuous
-pronunciation_similarity          99962  continuous
-command_familiarity               96801  continuous
-stress_score                      99346  continuous
-hesitation_score                  99965  continuous
+pronunciation_similarity          99966  continuous
+command_familiarity               96870  continuous
+stress_score                      99331  continuous
+hesitation_score                  99944  continuous
 ```
 
 ### Vehicle Context
 
 ```
                       Unique Values        Type
-vehicle_speed                 48885  continuous
+vehicle_speed                 48937  continuous
 engine_running                    2      binary
-location_familiarity          96278  continuous
-time_familiarity              98362  continuous
+location_familiarity          96406  continuous
+time_familiarity              98505  continuous
 driver_present                    2      binary
 seatbelt_fastened                 2      binary
 ```
@@ -500,9 +501,9 @@ seatbelt_fastened                 2      binary
 
 ```
                          Unique Values         Type
-previous_trust_score             98823   continuous
-failed_attempts                      6  categorical
-successful_transactions          14279   continuous
+previous_trust_score             98867   continuous
+failed_attempts                      7  categorical
+successful_transactions           4180   continuous
 fraud_history                        2       binary
 ```
 
@@ -510,7 +511,7 @@ fraud_history                        2       binary
 
 ```
                        Unique Values         Type
-transaction_amount             69199   continuous
+transaction_amount             69442   continuous
 transaction_category               4  categorical
 beneficiary_type                   2       binary
 beneficiary_frequency         100000   continuous
@@ -522,15 +523,15 @@ transaction_risk              100000   continuous
 ```
                 Unique Values         Type
 intent_type                 4  categorical
-llm_confidence          98926   continuous
+llm_confidence          99032   continuous
 ```
 
 ### Unexpected / Non-Schema
 
 ```
              Unique Values         Type
-trust_score            811   continuous
-risk_score            9560   continuous
+trust_score           1149   continuous
+risk_score            9558   continuous
 decision                 4  categorical
 confidence            4731   continuous
 ```
@@ -541,75 +542,76 @@ confidence            4731   continuous
 ### Top Positive Correlations
 
 ```
-              Feature A                Feature B        r
-   previous_trust_score  successful_transactions 0.912588
-           stress_score         hesitation_score 0.719170
- speech_rate_similarity      command_familiarity 0.693224
-   location_familiarity         time_familiarity 0.491653
-   previous_trust_score              trust_score 0.466307
-successful_transactions              trust_score 0.452626
-       transaction_risk               risk_score 0.435706
- speech_rate_similarity pronunciation_similarity 0.327042
-     transaction_amount               risk_score 0.316768
-     transaction_amount         transaction_risk 0.313098
+             Feature A                Feature B        r
+  previous_trust_score  successful_transactions 0.910118
+speech_rate_similarity      command_familiarity 0.781619
+          stress_score         hesitation_score 0.744839
+    speaker_similarity           liveness_score 0.712230
+speech_rate_similarity pronunciation_similarity 0.580811
+  location_familiarity         time_familiarity 0.527091
+        liveness_score              trust_score 0.506238
+    speaker_similarity              trust_score 0.500026
+  previous_trust_score              trust_score 0.408204
+      transaction_risk               risk_score 0.390415
 ```
 
 ### Top Negative Correlations
 
 ```
                Feature A         Feature B         r
-              risk_score        confidence -0.962619
-          liveness_score spoof_probability -0.570639
-   beneficiary_frequency  transaction_risk -0.548069
-pronunciation_similarity      stress_score -0.490103
-        transaction_risk        confidence -0.445835
-  speech_rate_similarity  hesitation_score -0.431946
-      transaction_amount        confidence -0.365848
-pronunciation_similarity  hesitation_score -0.360141
-           audio_quality spoof_probability -0.359695
-  speech_rate_similarity      stress_score -0.333438
+              risk_score        confidence -0.956460
+      speaker_similarity spoof_probability -0.802474
+          liveness_score spoof_probability -0.771737
+   beneficiary_frequency  transaction_risk -0.621375
+pronunciation_similarity      stress_score -0.584006
+       spoof_probability       trust_score -0.545916
+  speech_rate_similarity  hesitation_score -0.488155
+  speech_rate_similarity      stress_score -0.455926
+pronunciation_similarity  hesitation_score -0.442708
+           audio_quality spoof_probability -0.421008
 ```
 
 ### Highly Correlated Pairs (|r| >= 0.8)
 
 ```
            Feature A               Feature B         r
-previous_trust_score successful_transactions  0.912588
-          risk_score              confidence -0.962619
+  speaker_similarity       spoof_probability -0.802474
+previous_trust_score successful_transactions  0.910118
+          risk_score              confidence -0.956460
 ```
 
 ### Redundant Features (|r| >= 0.95)
 
 ```
- Feature A  Feature B         r
-risk_score confidence -0.962619
+ Feature A  Feature B        r
+risk_score confidence -0.95646
 ```
 
 ## Multicollinearity (VIF)
 
 ```
                             VIF
-confidence                16.86
-risk_score                16.71
-previous_trust_score       8.75
-successful_transactions    8.16
-speech_rate_similarity     3.30
-command_familiarity        2.58
-hesitation_score           2.52
-stress_score               2.46
-spoof_probability          1.92
-transaction_risk           1.85
-beneficiary_frequency      1.63
-trust_score                1.61
-liveness_score             1.61
-pronunciation_similarity   1.47
-transaction_amount         1.33
-time_familiarity           1.32
-location_familiarity       1.32
-audio_quality              1.26
-account_age_days           1.15
-speaker_similarity         1.02
-llm_confidence             1.02
+risk_score                14.89
+confidence                14.69
+previous_trust_score       8.57
+successful_transactions    7.97
+speech_rate_similarity     5.01
+spoof_probability          4.52
+command_familiarity        3.37
+speaker_similarity         3.11
+liveness_score             2.95
+stress_score               2.81
+hesitation_score           2.73
+trust_score                2.12
+pronunciation_similarity   2.03
+transaction_risk           2.00
+beneficiary_frequency      1.89
+location_familiarity       1.41
+time_familiarity           1.39
+transaction_amount         1.34
+audio_quality              1.32
+account_age_days           1.13
+llm_confidence             1.03
 vehicle_speed              1.00
 ```
 
@@ -623,7 +625,7 @@ Rule of thumb: VIF > 10 suggests problematic multicollinearity; VIF > 5 is worth
 ```
                   IQR_Outliers  Z_Outliers  Outlier %
 Feature                                              
-account_age_days          3496        1518        3.5
+account_age_days          3482        1514       3.48
 ```
 
 ### Voice Biometrics
@@ -631,10 +633,10 @@ account_age_days          3496        1518        3.5
 ```
                     IQR_Outliers  Z_Outliers  Outlier %
 Feature                                                
-speaker_similarity          1058         600       1.06
-liveness_score               373         383       0.38
-audio_quality               1259         938       1.26
-spoof_probability             52          53       0.05
+speaker_similarity         10250        1674      10.25
+liveness_score              3313        2193       3.31
+audio_quality               1842        1258       1.84
+spoof_probability           1901        1372       1.90
 ```
 
 ### Behavior
@@ -642,11 +644,11 @@ spoof_probability             52          53       0.05
 ```
                           IQR_Outliers  Z_Outliers  Outlier %
 Feature                                                      
-speech_rate_similarity             548         225       0.55
-pronunciation_similarity           671         271       0.67
-command_familiarity                406         241       0.41
-stress_score                       666         343       0.67
-hesitation_score                   458         156       0.46
+speech_rate_similarity            2251        1356       2.25
+pronunciation_similarity          2911        1819       2.91
+command_familiarity               1637        1099       1.64
+stress_score                      1469         839       1.47
+hesitation_score                   784         380       0.78
 ```
 
 ### Vehicle Context
@@ -654,9 +656,9 @@ hesitation_score                   458         156       0.46
 ```
                       IQR_Outliers  Z_Outliers  Outlier %
 Feature                                                  
-vehicle_speed                   68         101       0.10
-location_familiarity            73          77       0.08
-time_familiarity                40          29       0.04
+vehicle_speed                   89         118       0.12
+location_familiarity           271         236       0.27
+time_familiarity                84          59       0.08
 ```
 
 ### Historical Profile
@@ -664,8 +666,8 @@ time_familiarity                40          29       0.04
 ```
                          IQR_Outliers  Z_Outliers  Outlier %
 Feature                                                     
-previous_trust_score               29          27       0.03
-successful_transactions           159          39       0.16
+previous_trust_score               32          27       0.03
+successful_transactions           187          50       0.19
 ```
 
 ### Transaction
@@ -673,9 +675,9 @@ successful_transactions           159          39       0.16
 ```
                        IQR_Outliers  Z_Outliers  Outlier %
 Feature                                                   
-transaction_amount              532         586       0.59
-beneficiary_frequency           226         110       0.23
-transaction_risk               2597         834       2.60
+transaction_amount              968         838       0.97
+beneficiary_frequency           230         113       0.23
+transaction_risk               9011        1957       9.01
 ```
 
 ### Intent
@@ -683,7 +685,7 @@ transaction_risk               2597         834       2.60
 ```
                 IQR_Outliers  Z_Outliers  Outlier %
 Feature                                            
-llm_confidence             0           1        0.0
+llm_confidence            55          63       0.06
 ```
 
 ### Unexpected / Non-Schema
@@ -691,7 +693,7 @@ llm_confidence             0           1        0.0
 ```
              IQR_Outliers  Z_Outliers  Outlier %
 Feature                                         
-trust_score          9312        2075       9.31
+trust_score          9757        1642       9.76
 risk_score              0           0       0.00
 confidence              0           0       0.00
 ```
@@ -704,9 +706,9 @@ confidence              0           0       0.00
 ```
                   Quality
 account_age_days    100.0
+kyc_verified        100.0
 email_verified      100.0
 voice_enrolled      100.0
-kyc_verified         85.0
 phone_verified       85.0
 ```
 
@@ -714,10 +716,10 @@ phone_verified       85.0
 
 ```
                     Quality
-speaker_similarity    100.0
-liveness_score        100.0
 audio_quality         100.0
-spoof_probability     100.0
+liveness_score         80.0
+spoof_probability      80.0
+speaker_similarity     65.0
 ```
 
 ### Behavior
@@ -725,10 +727,10 @@ spoof_probability     100.0
 ```
                           Quality
 speech_rate_similarity      100.0
-pronunciation_similarity    100.0
 command_familiarity         100.0
 stress_score                100.0
 hesitation_score            100.0
+pronunciation_similarity     80.0
 ```
 
 ### Vehicle Context
@@ -761,7 +763,7 @@ transaction_amount       100.0
 transaction_category     100.0
 beneficiary_type         100.0
 beneficiary_frequency    100.0
-transaction_risk         100.0
+transaction_risk          85.0
 ```
 
 ### Intent
@@ -779,7 +781,7 @@ llm_confidence    100.0
 risk_score     100.0
 decision       100.0
 confidence     100.0
-trust_score     75.0
+trust_score     65.0
 ```
 
 ## Recommendations
@@ -787,11 +789,20 @@ trust_score     75.0
 - Schema: add missing required columns: ['transaction_id'].
 - Schema: ['trust_score', 'risk_score', 'decision', 'confidence'] are not part of the declared model schema -- confirm they're intentional (e.g. metadata) before training.
 - Leakage: label columns ['trust_score', 'risk_score', 'decision', 'confidence'] are present in this file -- exclude them from model input features.
-- Distribution: `trust_score` has skewness -2.05 -- consider a log/Box-Cox transform.
-- Consistency: binary feature(s) ['kyc_verified', 'phone_verified'] are >98% one class -- consider class weighting or resampling.
-- Distribution: ['trust_score'] have >5% flagged outliers -- verify these are real, not generator bugs.
+- Distribution: `speaker_similarity` has skewness -8.32 -- consider a log/Box-Cox transform.
+- Distribution: `liveness_score` has skewness -5.49 -- consider a log/Box-Cox transform.
+- Distribution: `spoof_probability` has skewness 4.97 -- consider a log/Box-Cox transform.
+- Distribution: `pronunciation_similarity` has skewness -2.05 -- consider a log/Box-Cox transform.
+- Distribution: `trust_score` has skewness -4.18 -- consider a log/Box-Cox transform.
+- Distribution: `speaker_similarity` has kurtosis 75.82 -- heavy tails, check for extreme outliers.
+- Distribution: `liveness_score` has kurtosis 39.12 -- heavy tails, check for extreme outliers.
+- Distribution: `spoof_probability` has kurtosis 38.63 -- heavy tails, check for extreme outliers.
+- Distribution: `pronunciation_similarity` has kurtosis 9.68 -- heavy tails, check for extreme outliers.
+- Distribution: `trust_score` has kurtosis 34.91 -- heavy tails, check for extreme outliers.
+- Consistency: binary feature(s) ['phone_verified'] are >98% one class -- consider class weighting or resampling.
+- Distribution: ['speaker_similarity', 'transaction_risk', 'trust_score'] have >5% flagged outliers -- verify these are real, not generator bugs.
 - Correlation: near-duplicate feature pairs risk_score/confidence (r=-0.96) -- consider dropping one from each pair.
-- Correlation: ['confidence', 'risk_score'] have VIF > 10 -- multicollinearity risk for linear models.
+- Correlation: ['risk_score', 'confidence'] have VIF > 10 -- multicollinearity risk for linear models.
 
 ## Dataset Health Score
 
@@ -800,10 +811,10 @@ trust_score     75.0
 Sub-score                                                   
 Schema                 20        50.0                  10.00
 Completeness           15       100.0                  15.00
-Distribution           15        97.7                  14.66
-Consistency            15        87.0                  13.05
-Correlation            15        81.0                  12.15
-Feature Quality        20        98.4                  19.69
+Distribution           15        77.3                  11.59
+Consistency            15        86.0                  12.90
+Correlation            15        79.0                  11.85
+Feature Quality        20        95.4                  19.09
 ```
 
-- **Overall Weighted Health Score: 84.5/100 (Fair)**
+- **Overall Weighted Health Score: 80.4/100 (Fair)**

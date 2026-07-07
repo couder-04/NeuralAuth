@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from dotenv import load_dotenv
 
@@ -20,6 +20,12 @@ load_dotenv(ROOT / ".env")
 # ---------------------------------------------------------------------------
 # Provider Defaults
 # ---------------------------------------------------------------------------
+#
+# NOTE: this must have one entry for every provider `llm_client.py`'s
+# `_dispatch()` actually knows how to call (openrouter / claude / gemini).
+# `verify_labels.py`'s `--provider` CLI choices are restricted to exactly
+# these keys -- if you add a new provider here, add its dispatch method in
+# `llm_client.py` first, then add it to the CLI choices.
 
 PROVIDER_DEFAULTS = {
     "openrouter": {
@@ -27,6 +33,18 @@ PROVIDER_DEFAULTS = {
         "chat_path": "/chat/completions",
         "default_model": "google/gemini-3.5-flash",
         "api_key_env": "OPENROUTER_API_KEY",
+    },
+    "claude": {
+        "base_url": "https://api.anthropic.com",
+        "chat_path": "/v1/messages",
+        "default_model": "claude-sonnet-4-6",
+        "api_key_env": "ANTHROPIC_API_KEY",
+    },
+    "gemini": {
+        "base_url": "https://generativelanguage.googleapis.com/v1beta",
+        "chat_path": "",  # _call_gemini builds its own path from `model`
+        "default_model": "gemini-1.5-flash",
+        "api_key_env": "GEMINI_API_KEY",
     },
 }
 
@@ -90,6 +108,19 @@ class Config:
     score_max: float = 1.0
 
     allowed_decisions: Optional[list] = None
+
+    # Explicit schema overrides. `schema.py`'s keyword-based inference is a
+    # best-effort fallback for unfamiliar datasets; for a known dataset
+    # (like this project's own dataset.csv, where feature names like
+    # `transaction_risk` / `previous_trust_score` / `fraud_history` share
+    # vocabulary with the *actual* target labels `trust_score` / `risk_score`
+    # / `decision` / `confidence`), heuristics alone cannot reliably tell
+    # features from labels. Set these explicitly to bypass the heuristic
+    # for that field and to give `validator.py` a hard allow-list of columns
+    # the LLM is permitted to correct.
+    id_column: Optional[str] = None
+    decision_column: Optional[str] = None
+    label_columns: Optional[List[str]] = None
 
     # ------------------------------------------------------------------
     # Run Control

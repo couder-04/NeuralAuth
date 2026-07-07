@@ -15,9 +15,11 @@ Generated Features
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
+
+from generators.fraud import FraudContext, blend
 
 
 # ==========================================================
@@ -55,99 +57,67 @@ class HistoryGenerator:
     def generate(
         self,
         fraudulent: bool = False,
+        fraud_context: Optional[FraudContext] = None,
     ) -> HistoryFeatures:
+
+        ctx = FraudContext.resolve(fraudulent, fraud_context)
 
         # --------------------------------------------
         # Fraud History
         # --------------------------------------------
 
-        if fraudulent:
+        impact_fh = ctx.feature_impact("history", "fraud_history")
+        p_fraud_history = blend(0.02, 0.65, impact_fh)
 
-            fraud_history = self.rng.choice(
-                [0, 1],
-                p=[0.35, 0.65],
-            )
-
-        else:
-
-            fraud_history = self.rng.choice(
-                [0, 1],
-                p=[0.98, 0.02],
-            )
+        fraud_history = self.rng.choice(
+            [0, 1],
+            p=[1.0 - p_fraud_history, p_fraud_history],
+        )
 
         # --------------------------------------------
         # Successful Transactions
         # --------------------------------------------
 
-        if fraudulent:
+        impact_succ = ctx.feature_impact(
+            "history", "successful_transactions"
+        )
 
-            successful_transactions = int(
+        successful_transactions = int(
 
-                np.clip(
+            np.clip(
 
-                    self.rng.normal(
-                        120,
-                        80,
-                    ),
+                self.rng.normal(
+                    blend(1800, 120, impact_succ),
+                    blend(900, 80, impact_succ),
+                ),
 
-                    0,
-                    600,
-
-                )
-
-            )
-
-        else:
-
-            successful_transactions = int(
-
-                np.clip(
-
-                    self.rng.normal(
-                        1800,
-                        900,
-                    ),
-
-                    20,
-                    10000,
-
-                )
+                blend(20, 0, impact_succ),
+                blend(10000, 600, impact_succ),
 
             )
+
+        )
 
         # --------------------------------------------
         # Failed Attempts
         # --------------------------------------------
 
-        if fraudulent:
+        impact_fail = ctx.feature_impact("history", "failed_attempts")
 
-            failed_attempts = int(
+        failed_attempts = int(
 
-                np.clip(
+            np.clip(
 
-                    self.rng.poisson(4),
+                self.rng.poisson(
+                    blend(0.6, 4.0, impact_fail)
+                ),
 
-                    0,
-                    15,
-
-                )
-
-            )
-
-        else:
-
-            failed_attempts = int(
-
-                np.clip(
-
-                    self.rng.poisson(0.6),
-
-                    0,
-                    5,
-
-                )
+                0,
+                blend(5, 15, impact_fail),
 
             )
+
+        )
 
         # --------------------------------------------
         # Previous Trust Score
@@ -197,10 +167,12 @@ _generator = HistoryGenerator()
 
 def generate_history(
     fraudulent: bool = False,
+    fraud_context: Optional[FraudContext] = None,
 ) -> Dict:
 
     return _generator.generate(
         fraudulent=fraudulent,
+        fraud_context=fraud_context,
     ).to_dict()
 
 

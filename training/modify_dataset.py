@@ -92,15 +92,24 @@ class Config:
 
     # ---- distributions that Dataset_Info.md flagged as unhealthy -------
     # column -> (numpy sampler name, kwargs, rescale to observed [low, high])
+    #
+    # NOTE: `speaker_similarity` and `transaction_risk` used to be reshaped
+    # here too (into [0.9123, 1.0] and [0.0, 0.60] respectively). Those
+    # targets were tuned back when `generate_users.py`/`generate_transactions.py`
+    # never actually produced fraudulent samples, so both columns were
+    # unnaturally narrow and needed a synthetic beta/gamma stretch to look
+    # "healthy". Now that fraud scenarios (see generators/fraud.py) inject
+    # real low-similarity / high-risk tail samples, `reshape_distribution`'s
+    # rank-preserving remap into a narrow target range would silently
+    # collapse that fraud signal back into a "normal-looking" band (e.g. the
+    # single lowest-similarity fraud row would still be remapped to ~0.91).
+    # Do NOT add either column back here without re-deriving the target
+    # range from the *post-fraud* empirical distribution.
     RESHAPE_TARGETS = {
         "account_age_days": dict(sampler="gamma", kwargs=dict(shape=1.6, scale=1.0),
                                   low=30.0, high=5000.0),
-        "speaker_similarity": dict(sampler="beta", kwargs=dict(a=9.0, b=1.6),
-                                    low=0.9123, high=1.0),
         "beneficiary_frequency": dict(sampler="beta", kwargs=dict(a=2.4, b=1.0),
                                        low=0.0, high=1.0),
-        "transaction_risk": dict(sampler="gamma", kwargs=dict(shape=2.1, scale=1.0),
-                                  low=0.0, high=0.60),
     }
 
     # ---- dependency strengthening: target_col -> driver definition -----
@@ -561,6 +570,17 @@ def main() -> None:
     )
 
     df = original.copy(deep=True)
+
+    # Work in float64 for the whole transformation phase. Several steps
+    # below (persona nudges, dependency/edge-case adjustments, jitter) add
+    # small non-integer deltas to columns that are declared as int64 in the
+    # original schema (successful_transactions, failed_attempts, ...).
+    # pandas raises a `LossySetitemError` on an in-place float write into an
+    # int64 column rather than silently truncating, so every numeric column
+    # is upcast here; `restore_dtypes()` casts everything back to its exact
+    # original dtype (rounding ints) once every transform has run.
+    for col in df.select_dtypes(include=["integer"]).columns:
+        df[col] = df[col].astype("float64")
 
     # 1) Latent persona modeling (never persisted as columns)
     personas = generate_personas(df, rng)

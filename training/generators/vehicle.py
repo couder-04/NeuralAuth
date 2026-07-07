@@ -162,19 +162,13 @@ class VehicleGenerator:
 
         else:
 
-            if fraudulent:
+            impact_belt = ctx.feature_impact("vehicle", "seatbelt_fastened")
+            p_unfastened = blend(0.05, 0.25, impact_belt)
 
-                seatbelt_fastened = self.rng.choice(
-                    [0, 1],
-                    p=[0.25, 0.75],
-                )
-
-            else:
-
-                seatbelt_fastened = self.rng.choice(
-                    [0, 1],
-                    p=[0.05, 0.95],
-                )
+            seatbelt_fastened = self.rng.choice(
+                [0, 1],
+                p=[p_unfastened, 1.0 - p_unfastened],
+            )
 
         return VehicleFeatures(
 
@@ -211,10 +205,12 @@ _generator = VehicleGenerator()
 
 def generate_vehicle(
     fraudulent: bool = False,
+    fraud_context: Optional[FraudContext] = None,
 ) -> Dict:
 
     return _generator.generate(
         fraudulent=fraudulent,
+        fraud_context=fraud_context,
     ).to_dict()
 
 

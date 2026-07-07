@@ -16,9 +16,11 @@ simulate an LLM parsing spoken commands.
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
+
+from generators.fraud import FraudContext, blend
 
 
 # ==========================================================
@@ -63,7 +65,10 @@ class IntentGenerator:
         self,
         transaction_category: int,
         fraudulent: bool = False,
+        fraud_context: Optional[FraudContext] = None,
     ) -> IntentFeatures:
+
+        ctx = FraudContext.resolve(fraudulent, fraud_context)
 
         # Intent matches transaction category
 
@@ -73,33 +78,19 @@ class IntentGenerator:
         # LLM Confidence
         # --------------------------------------------
 
-        if fraudulent:
+        impact_conf = ctx.feature_impact("intent", "llm_confidence")
 
-            confidence = np.clip(
+        confidence = np.clip(
 
-                self.rng.normal(
-                    0.82,
-                    0.10,
-                ),
+            self.rng.normal(
+                blend(0.96, 0.82, impact_conf),
+                blend(0.03, 0.10, impact_conf),
+            ),
 
-                0.50,
-                1.00,
+            blend(0.70, 0.50, impact_conf),
+            1.00,
 
-            )
-
-        else:
-
-            confidence = np.clip(
-
-                self.rng.normal(
-                    0.96,
-                    0.03,
-                ),
-
-                0.70,
-                1.00,
-
-            )
+        )
 
         return IntentFeatures(
 
@@ -123,11 +114,13 @@ _generator = IntentGenerator()
 def generate_intent(
     transaction_category: int,
     fraudulent: bool = False,
+    fraud_context: Optional[FraudContext] = None,
 ) -> Dict:
 
     return _generator.generate(
         transaction_category=transaction_category,
         fraudulent=fraudulent,
+        fraud_context=fraud_context,
     ).to_dict()
 
 

@@ -19,7 +19,7 @@ Contains (almost) no business logic — only orchestration:
       -> Generate report
 
 Usage:
-    python verify_labels.py --input data/dataset.csv --provider deepseek
+    python verify_labels.py --input data/dataset.csv --provider openrouter
     python verify_labels.py --input data/dataset.csv --dry-run   # no API calls
 """
 
@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--input", type=str, default=None, help="Input CSV path")
     p.add_argument("--output-dir", type=str, default=None, help="Output directory")
     p.add_argument("--provider", type=str, default=None,
-                    choices=["deepseek", "openai", "gemini", "qwen", "claude"])
+                    choices=["deepseek", "openai", "gemini", "qwen", "claude", "openrouter"])
     p.add_argument("--model", type=str, default=None)
     p.add_argument("--api-key", type=str, default=None)
     p.add_argument("--batch-size", type=int, default=None)
